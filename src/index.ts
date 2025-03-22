@@ -1,6 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import sequelize from './config/database';
+import { AppDataSource } from './config/database'; // Importa la configuración de TypeORM
 
 dotenv.config();
 const app = express();
@@ -10,11 +10,9 @@ app.use(express.json());
 
 const start = async () => {
     try {
-        await sequelize.authenticate();
+        // Conecta a la base de datos con TypeORM
+        await AppDataSource.initialize();
         console.log('Database connected successfully');
-
-        await sequelize.sync({ force: false });
-        console.log('Database synced');
 
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
