@@ -1,13 +1,21 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
+import {Subcategory} from "./Subcategory";
+// Importa la entidad Subcategory
 
 @Entity()
 export class Category {
     @PrimaryGeneratedColumn({ type: "int" })
     category_id: number;
 
-    @Column({ length: 100 })
+    @Column({ unique: true, length: 100 })
     name: string;
 
-    @Column("text")
-    description: string;
+    @OneToMany(() => Subcategory, (subcategory) => subcategory.category, { cascade: true })
+    subcategories: Subcategory[];
+    constructor(category_id: number, name: string, subcategories: Subcategory[]) {
+        this.category_id = category_id;
+        this.name = name;
+        this.subcategories = subcategories;
+    }
 }
+

@@ -1,6 +1,6 @@
 // controllers/UserController.ts
 import { Request, Response } from "express";
-import { AppDataSource } from "../config/database";
+import { AppDataSource } from "../Config/database";
 import { User } from "../Entities/User";
 
 export class UserController {
