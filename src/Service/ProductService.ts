@@ -1,18 +1,18 @@
 import { AppDataSource } from '../Config/database'; // Asegúrate de importar la fuente de datos correcta
-import { Product } from '../Entities/Product';
+import { Products } from '../Entities/Products';
 
 export class ProductService {
 
-    private productRepository = AppDataSource.getRepository(Product); // Repositorio de Product
+    private productRepository = AppDataSource.getRepository(Products); // Repositorio de Products
 
     // Crear un nuevo producto
-    async createProduct(data: Partial<Product>): Promise<Product> {
-        const product = this.productRepository.create(data); // Crear una nueva entidad Product
+    async createProduct(data: Partial<Products>): Promise<Products> {
+        const product = this.productRepository.create(data); // Crear una nueva entidad Products
         return await this.productRepository.save(product); // Guardar el producto en la base de datos
     }
 
     // Obtener todos los productos
-    async getAllProducts(): Promise<Product[]> {
+    async getAllProducts(): Promise<Products[]> {
         try {
             console.log('Consultando todos los productos...');
             const products = await this.productRepository.find(); // Traer todos los productos
@@ -25,9 +25,9 @@ export class ProductService {
     }
 
     // Obtener un producto por su ID
-    async getProductById(id: number): Promise<Product | null> {
+    async getProductById(id: number): Promise<Products | null> {
         try {
-            const product = await this.productRepository.findOneBy({ product_id: id }); // Buscar el producto por ID
+            const product = await this.productRepository.findOneBy({ product_id: id });
             if (!product) {
                 throw new Error('Product not found');
             }
@@ -37,14 +37,42 @@ export class ProductService {
             throw new Error('Error fetching product by id');
         }
     }
-
-    // Eliminar un producto por su ID
-    async deleteProduct(id: number): Promise<void> {
+    // Actualizar un producto por su ID
+    async updateProduct(id: number, data: Partial<Products>): Promise<Products> {
         try {
-            const result = await this.productRepository.delete(id); // Eliminar el producto por su ID
-            if (result.affected === 0) {
-                throw new Error('Product not found'); // Si no se elimina ningún producto, lanzamos un error
+            const product = await this.productRepository.findOneBy({ product_id: id });
+            if (!product) {
+                throw new Error('Product not found');
             }
+            Object.assign(product, data);
+            return await this.productRepository.save(product);
+        } catch (error) {
+            console.error('Error updating product:', error);
+            throw new Error('Error updating product');
+        }
+    }
+    // Obtener productos por categoría y subcategoría
+    async getProductsByCategoryAndSubcategory(categoryId: number, subcategoryId: number): Promise<Products[]> {
+        try {
+            const products = await this.productRepository.find({
+                where: { subcategory: { category: { category_id: categoryId }, subcategory_id: subcategoryId } },
+                relations: ['subcategory', 'subcategory.category']
+            });
+            return products;
+        } catch (error) {
+            console.error('Error fetching products by category and subcategory:', error);
+            throw new Error('Error fetching products by category and subcategory');
+        }
+    }
+    // Eliminar un producto por su ID
+    async deleteProduct(id: number): Promise<Products> {
+        try {
+            const product = await this.productRepository.findOneBy({ product_id: id });
+            if (!product) {
+                throw new Error('Product not found');
+            }
+            await this.productRepository.delete(id);
+            return product;
         } catch (error) {
             console.error('Error deleting product:', error);
             throw new Error('Error deleting product');

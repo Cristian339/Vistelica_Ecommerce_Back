@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm';
 import { User } from '../Entities/User';
-import { Product } from '../Entities/Product';
+import { Products } from '../Entities/Products';
 import {Category} from '../Entities/Category';
 import {Subcategory} from '../Entities/Subcategory';
 
@@ -11,7 +11,8 @@ export const AppDataSource = new DataSource({
     username: 'postgres', // Usuario de la base de datos
     password: 'root', // Contraseña de la base de datos
     database: 'postgres', // Nombre de la base de datos
-    entities: [User, Product, Category, Subcategory],
+    schema: 'vistelica',
+    entities: [User, Products, Category, Subcategory],
     synchronize: true,
     logging: false,
     migrations: [],

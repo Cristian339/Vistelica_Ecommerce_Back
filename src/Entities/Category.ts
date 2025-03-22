@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
 import {Subcategory} from "./Subcategory";
 // Importa la entidad Subcategory
 
-@Entity()
+@Entity({ schema: 'vistelica' })
 export class Category {
     @PrimaryGeneratedColumn({ type: "int" })
     category_id: number;

@@ -1,5 +1,5 @@
 import { EntityRepository, Repository } from 'typeorm';
-import { Product } from '../Entities/Product';
+import { Product } from '../Entities/Products';
 
 export class ProductRepository extends Repository<Product> {
     async createProduct(data: Partial<Product>): Promise<Product> {

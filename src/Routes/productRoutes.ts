@@ -22,4 +22,33 @@ router.post('/products', async (req: Request, res: Response, next: NextFunction)
         next(error);
     }
 });
+router.delete('/products/:id', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await productController.delete(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+router.get('/products/:id', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await productController.getById(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+
+router.put('/products/:id', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await productController.update(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+router.get('/products/category/:categoryId/subcategory/:subcategoryId', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await productController.getByCategoryAndSubcategory(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
 export default router;

@@ -11,8 +11,8 @@ export enum Size {
     XXL = "XXL"
 }
 
-@Entity()
-export class Product {
+@Entity({ schema: 'vistelica' })
+export class Products {
 
     @PrimaryGeneratedColumn({ type: "int" })
     product_id: number;
