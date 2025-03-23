@@ -46,16 +46,16 @@ export class ProductController {
             return res.status(500).json({ message: 'Error updating product', error });
         }
     }
-    //async getByCategoryAndSubcategory(req: Request, res: Response): Promise<Response> {
-    //    try {
-    //        const categoryId = Number(req.params.categoryId);
-    //        const subcategoryId = Number(req.params.subcategoryId);
-    //        const products = await this.productService.getProductsByCategoryAndSubcategory(categoryId, subcategoryId);
-    //        return res.status(200).json(products);
-    //    } catch (error) {
-    //        return res.status(500).json({ message: 'Error fetching products by category and subcategory', error });
-    //    }
-    //}
+    async getByCategoryAndSubcategory(req: Request, res: Response): Promise<Response> {
+        try {
+            const categoryId = Number(req.params.categoryId);
+            const subcategoryId = Number(req.params.subcategoryId);
+            const products = await this.productService.getProductsByCategoryAndSubcategory(categoryId, subcategoryId);
+            return res.status(200).json(products);
+        } catch (error) {
+            return res.status(500).json({ message: 'Error fetching products by category and subcategory', error });
+        }
+    }
     async delete(req: Request, res: Response): Promise<Response> {
         try {
             const product = await this.productService.deleteProduct(Number(req.params.id));

@@ -17,8 +17,8 @@ export class ProductService {
             console.log('Datos recibidos:', data);
 
             // Buscar categoría y subcategoría por sus IDs
-            const category = await this.categoryRepository.findOne({ where: { category_id: data.category?.category_id } });
-            const subcategory = await this.subcategoryRepository.findOne({ where: { subcategory_id: data.subcategory?.subcategory_id } });
+            const category = await this.categoryRepository.findOne({where: {category_id: data.category?.category_id}});
+            const subcategory = await this.subcategoryRepository.findOne({where: {subcategory_id: data.subcategory?.subcategory_id}});
             console.log('Categoría encontrada:', category);
             console.log('Subcategoría encontrada:', subcategory);
 
@@ -49,9 +49,21 @@ export class ProductService {
     async getAllProducts(): Promise<Products[]> {
         try {
             console.log('Consultando todos los productos...');
-            const products = await this.productRepository.find(); // Traer todos los productos
-            console.log('Productos obtenidos:', products);
-            return products; // Devolver los productos obtenidos
+
+            // Obtenemos los productos con las relaciones de categoría y subcategoría
+            const products = await this.productRepository.find({
+                relations: ['category', 'subcategory'], // Asegúrate de incluir las relaciones
+            });
+
+            // Extraemos solo las IDs de categoría y subcategoría junto con los productos
+            const productsWithCategoryAndSubcategory = products.map(product => ({
+                ...product,
+                categoryId: product.category?.category_id,    // ID de la categoría
+                subcategoryId: product.subcategory?.subcategory_id,  // ID de la subcategoría
+            }));
+
+            console.log('Productos obtenidos:', productsWithCategoryAndSubcategory);
+            return productsWithCategoryAndSubcategory;
         } catch (error) {
             console.error('Error al obtener productos:', error);
             throw new Error('Error al obtener productos');
@@ -61,52 +73,105 @@ export class ProductService {
     // Obtener un producto por su ID
     async getProductById(id: number): Promise<Products | null> {
         try {
-            const product = await this.productRepository.findOneBy({ product_id: id });
+            // Buscar el producto junto con las relaciones de categoría y subcategoría
+            const product = await this.productRepository.findOne({
+                where: { product_id: id },
+                relations: ['category', 'subcategory'], // Cargar las relaciones de categoría y subcategoría
+            });
+
             if (!product) {
                 throw new Error('Product not found');
             }
+
             return product;
         } catch (error) {
             console.error('Error fetching product by id:', error);
             throw new Error('Error fetching product by id');
         }
     }
+
     // Actualizar un producto por su ID
     async updateProduct(id: number, data: Partial<Products>): Promise<Products> {
         try {
-            const product = await this.productRepository.findOneBy({ product_id: id });
+            const product = await this.productRepository.findOne({
+                where: { product_id: id },
+                relations: ['category', 'subcategory'], // Cargar las relaciones de categoría y subcategoría
+            });
+
             if (!product) {
                 throw new Error('Product not found');
             }
+
+            // Si se proporciona una nueva categoría o subcategoría, buscar y asignar las relaciones correctas
+            if (data.category) {
+                const category = await this.categoryRepository.findOne({ where: { category_id: data.category.category_id } });
+                if (category) {
+                    product.category = category;
+                } else {
+                    throw new Error('Category not found');
+                }
+            }
+
+            if (data.subcategory) {
+                const subcategory = await this.subcategoryRepository.findOne({ where: { subcategory_id: data.subcategory.subcategory_id } });
+                if (subcategory) {
+                    product.subcategory = subcategory;
+                } else {
+                    throw new Error('Subcategory not found');
+                }
+            }
+
+            // Asignar los demás campos
             Object.assign(product, data);
+
+            // Guardar el producto actualizado
             return await this.productRepository.save(product);
         } catch (error) {
             console.error('Error updating product:', error);
             throw new Error('Error updating product');
         }
     }
+
+
+
     // Obtener productos por categoría y subcategoría
-    //async getProductsByCategoryAndSubcategory(categoryId: number, subcategoryId: number): Promise<Products[]> {
-    //    try {
-    //        const products = await this.productRepository.find({
-    //            where: { subcategory: { category: { category_id: categoryId }, subcategory_id: subcategoryId } },
-    //            relations: ['subcategory', 'subcategory.category']
-    //        });
-    //        return products;
-    //    } catch (error) {
-    //        console.error('Error fetching products by category and subcategory:', error);
-    //        throw new Error('Error fetching products by category and subcategory');
-    //    }
-    //}
+    async getProductsByCategoryAndSubcategory(categoryId: number, subcategoryId: number): Promise<Products[]> {
+        try {
+            const products = await this.productRepository.find({
+                where: {
+                    category: { category_id: categoryId }, // Filtrar por la categoría
+                    subcategory: { subcategory_id: subcategoryId } // Filtrar por la subcategoría
+                },
+                relations: ['category', 'subcategory'] // Asegúrate de que las relaciones se carguen correctamente
+            });
+            return products;
+        } catch (error) {
+            console.error('Error fetching products by category and subcategory:', error);
+            throw new Error('Error fetching products by category and subcategory');
+        }
+    }
+
     // Eliminar un producto por su ID
     async deleteProduct(id: number): Promise<Products> {
         try {
-            const product = await this.productRepository.findOneBy({ product_id: id });
+            // Primero, buscar el producto con sus relaciones (categoría y subcategoría)
+            const product = await this.productRepository.findOne({
+                where: {product_id: id},
+                relations: ['category', 'subcategory'], // Aseguramos que se traigan las relaciones
+            });
+
             if (!product) {
                 throw new Error('Product not found');
             }
+
+            // Guardamos la información del producto para devolverla después de la eliminación
+            const productToDelete = {...product};
+
+            // Ahora eliminamos el producto
             await this.productRepository.delete(id);
-            return product;
+
+            // Devolvemos el producto eliminado junto con sus relaciones
+            return productToDelete;
         } catch (error) {
             console.error('Error deleting product:', error);
             throw new Error('Error deleting product');
