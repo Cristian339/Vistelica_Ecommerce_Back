@@ -1,8 +1,8 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from "typeorm";
-import { Category } from "./Category";  // Importa la entidad Category
-import { Products } from "./Products";   // Importa la entidad Products
+import { Category } from "./Category";
+import { Products } from "./Products";
 
-@Entity({ schema: 'vistelica' })
+@Entity({ schema: "vistelica" })
 export class Subcategory {
     @PrimaryGeneratedColumn({ type: "int" })
     subcategory_id: number;
@@ -10,7 +10,7 @@ export class Subcategory {
     @Column({ unique: true, length: 100 })
     name: string;
 
-    @ManyToOne(() => Category, (category) => category.subcategories, { onDelete: "CASCADE" })
+    @ManyToOne(() => Category, (category) => category.subcategories, { onDelete: "CASCADE", nullable: false })
     category: Category;
 
     @OneToMany(() => Products, (product) => product.subcategory)

@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from "typeorm";
-// Importa Subcategory desde Category.ts
 import { Subcategory } from "./Subcategory";
+import { Category } from "./Category"; // Asegúrate de importar la entidad Category
 
 export enum Size {
     XS = "XS",
@@ -13,8 +13,7 @@ export enum Size {
 
 @Entity({ schema: 'vistelica' })
 export class Products {
-
-    @PrimaryGeneratedColumn({ type: "int" })
+    @PrimaryGeneratedColumn()
     product_id: number;
 
     @Column({ length: 100 })
@@ -29,8 +28,11 @@ export class Products {
     @Column("int")
     stock_quantity: number;
 
-    @ManyToOne(() => Subcategory, (subcategory) => subcategory.products, { onDelete: "CASCADE" })
-    subcategory: Subcategory; // Relación ManyToOne con Subcategory
+    @ManyToOne(() => Category, (category) => category.products, { nullable: true, onDelete: "CASCADE" })
+    category: Category; // Relación obligatoria con Category
+
+    @ManyToOne(() => Subcategory, (subcategory) => subcategory.products, { nullable: true, onDelete: "SET NULL" })
+    subcategory: Subcategory;
 
     @Column({ nullable: true })
     image_url: string;
@@ -43,12 +45,14 @@ export class Products {
 
     @UpdateDateColumn()
     updated_at: Date;
-    constructor(product_id: number, name: string, description: string, price: number, stock_quantity: number, subcategory: Subcategory, image_url: string, size: Size, created_at: Date, updated_at: Date) {
+
+    constructor(product_id: number, name: string, description: string, price: number, stock_quantity: number, category: Category, subcategory: Subcategory, image_url: string, size: Size, created_at: Date, updated_at: Date) {
         this.product_id = product_id;
         this.name = name;
         this.description = description;
         this.price = price;
         this.stock_quantity = stock_quantity;
+        this.category = category;
         this.subcategory = subcategory;
         this.image_url = image_url;
         this.size = size;

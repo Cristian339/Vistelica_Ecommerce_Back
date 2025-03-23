@@ -6,7 +6,9 @@ export class ProductRepository extends Repository<Product> {
         const product = this.create(data);
         return await this.save(product);
     }
-
+    async findAllWithRelations() {
+        return this.find({ relations: ["category", "subcategory"] });
+    }
     async getAllProducts(): Promise<Product[]> {
         try {
             const products = await this.find();

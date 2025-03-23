@@ -1,14 +1,48 @@
 import { AppDataSource } from '../Config/database'; // Asegúrate de importar la fuente de datos correcta
 import { Products } from '../Entities/Products';
+import { Category } from "../Entities/Category";
+import { Subcategory } from "../Entities/Subcategory";
+
 
 export class ProductService {
 
     private productRepository = AppDataSource.getRepository(Products); // Repositorio de Products
+    private categoryRepository = AppDataSource.getRepository(Category);
+    private subcategoryRepository = AppDataSource.getRepository(Subcategory);
+    // Crear un nuevo producto
 
     // Crear un nuevo producto
     async createProduct(data: Partial<Products>): Promise<Products> {
-        const product = this.productRepository.create(data); // Crear una nueva entidad Products
-        return await this.productRepository.save(product); // Guardar el producto en la base de datos
+        try {
+            console.log('Datos recibidos:', data);
+
+            // Buscar categoría y subcategoría por sus IDs
+            const category = await this.categoryRepository.findOne({ where: { category_id: data.category?.category_id } });
+            const subcategory = await this.subcategoryRepository.findOne({ where: { subcategory_id: data.subcategory?.subcategory_id } });
+            console.log('Categoría encontrada:', category);
+            console.log('Subcategoría encontrada:', subcategory);
+
+            // Asegúrate de que la categoría y subcategoría existen
+            if (!category || !subcategory) {
+                throw new Error("Category or Subcategory not found");
+            }
+
+            // Crea un nuevo objeto de producto con las entidades relacionadas
+            const product = this.productRepository.create({
+                ...data,
+                category: category,
+                subcategory: subcategory
+            });
+
+            // Guarda el producto en la base de datos
+            const savedProduct = await this.productRepository.save(product);
+            console.log('Producto guardado:', savedProduct);
+
+            return savedProduct; // Devuelve el producto guardado
+        } catch (error) {
+            console.error('Error al crear producto:', error);
+            throw new Error("Error creating product");
+        }
     }
 
     // Obtener todos los productos
@@ -52,18 +86,18 @@ export class ProductService {
         }
     }
     // Obtener productos por categoría y subcategoría
-    async getProductsByCategoryAndSubcategory(categoryId: number, subcategoryId: number): Promise<Products[]> {
-        try {
-            const products = await this.productRepository.find({
-                where: { subcategory: { category: { category_id: categoryId }, subcategory_id: subcategoryId } },
-                relations: ['subcategory', 'subcategory.category']
-            });
-            return products;
-        } catch (error) {
-            console.error('Error fetching products by category and subcategory:', error);
-            throw new Error('Error fetching products by category and subcategory');
-        }
-    }
+    //async getProductsByCategoryAndSubcategory(categoryId: number, subcategoryId: number): Promise<Products[]> {
+    //    try {
+    //        const products = await this.productRepository.find({
+    //            where: { subcategory: { category: { category_id: categoryId }, subcategory_id: subcategoryId } },
+    //            relations: ['subcategory', 'subcategory.category']
+    //        });
+    //        return products;
+    //    } catch (error) {
+    //        console.error('Error fetching products by category and subcategory:', error);
+    //        throw new Error('Error fetching products by category and subcategory');
+    //    }
+    //}
     // Eliminar un producto por su ID
     async deleteProduct(id: number): Promise<Products> {
         try {
