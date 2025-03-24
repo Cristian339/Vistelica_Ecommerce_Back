@@ -3,9 +3,9 @@ import {Review} from "./Review";
 import {Profile} from "./Profile";
 
 export enum Role {
-    ADMIN = 0,
-    VENDEDOR = 1,
-    CLIENTE = 2
+    ADMIN = "admin",
+    VENDEDOR = "vendedor",
+    CLIENTE = "cliente"
 }
 
 @Entity({ schema: 'vistelica' })
