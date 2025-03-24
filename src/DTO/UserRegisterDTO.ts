@@ -1,0 +1,37 @@
+import { Role } from "../Entities/User";
+
+export class UserRegisterDTO {
+    name: string;
+    lastName: string;
+    email: string;
+    password: string;
+    role?: Role;
+
+    constructor(data: any) {
+        this.name = data.name;
+        this.lastName = data.lastName;
+        this.email = data.email;
+        this.password = data.password;
+        this.role = data.role;
+    }
+
+    validate(): string[] {
+        const errors: string[] = [];
+
+        if (!this.name || this.name.trim() === '')
+            errors.push("El nombre es obligatorio");
+
+        if (!this.email || !this.validateEmail(this.email))
+            errors.push("Email inválido");
+
+        if (!this.password || this.password.length < 6)
+            errors.push("La contraseña debe tener al menos 6 caracteres");
+
+        return errors;
+    }
+
+    private validateEmail(email: string): boolean {
+        const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return regex.test(email);
+    }
+}

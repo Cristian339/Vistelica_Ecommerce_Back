@@ -9,7 +9,7 @@ export const AppDataSource = new DataSource({
     host: 'localhost', // Dirección del host, puede ser localhost o la IP del servidor
     port: 5432, // Puerto de PostgreSQL
     username: 'postgres', // Usuario de la base de datos
-    password: 'root', // Contraseña de la base de datos
+    password: 'usuario', // Contraseña de la base de datos
     database: 'postgres', // Nombre de la base de datos
     schema: 'vistelica',
     entities: [User, Products, Category, Subcategory],

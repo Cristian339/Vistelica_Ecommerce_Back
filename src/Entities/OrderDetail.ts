@@ -1,21 +1,21 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm";
 import { Order } from "./Order";
-import { Product } from "./Products";
+import { Products } from "./Products";
 
-@Entity()
+@Entity({ schema: 'vistelica' })
 export class OrderDetail {
     @PrimaryGeneratedColumn({ type: "int" })
-    order_detail_id: number;
+    order_detail_id!: number;
 
     @ManyToOne(() => Order)
-    order: Order;
+    order!: Order;
 
-    @ManyToOne(() => Product)
-    product: Product;
+    @ManyToOne(() => Products)
+    product!: Products;
 
     @Column("int")
-    quantity: number;
+    quantity!: number;
 
     @Column("decimal", { precision: 10, scale: 2 })
-    price: number;
+    price!: number;
 }

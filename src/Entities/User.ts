@@ -1,18 +1,21 @@
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 
 export enum Role {
-    ADMIN = "admin",
-    VENDEDOR = "vendedor",
-    CLIENTE = "cliente"
+    ADMIN = 0,
+    VENDEDOR = 1,
+    CLIENTE = 2
 }
 
-@Entity()
+@Entity({ schema: 'vistelica' })
 export class User {
     @PrimaryGeneratedColumn({ type: "int" })
     user_id!: number;
 
     @Column({ length: 100 })
     name!: string;
+
+    @Column({ length: 100 })
+    lastName!: string;
 
     @Column({ unique: true })
     email!: string;
