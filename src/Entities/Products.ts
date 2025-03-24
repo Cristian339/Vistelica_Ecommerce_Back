@@ -1,6 +1,15 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    ManyToOne,
+    CreateDateColumn,
+    UpdateDateColumn,
+    OneToMany
+} from "typeorm";
 import { Subcategory } from "./Subcategory";
-import { Category } from "./Category"; // Asegúrate de importar la entidad Category
+import { Category } from "./Category";
+import {ProductReview} from "./ProductReview";
 
 export enum Size {
     XS = "XS",
@@ -33,6 +42,8 @@ export class Products {
 
     @ManyToOne(() => Subcategory, (subcategory) => subcategory.products, { nullable: true, onDelete: "SET NULL" })
     subcategory: Subcategory;
+    @OneToMany(() => ProductReview, (review) => review.product)
+    reviews: ProductReview[];
 
     @Column({ nullable: true })
     image_url: string;
@@ -46,7 +57,7 @@ export class Products {
     @UpdateDateColumn()
     updated_at: Date;
 
-    constructor(product_id: number, name: string, description: string, price: number, stock_quantity: number, category: Category, subcategory: Subcategory, image_url: string, size: Size, created_at: Date, updated_at: Date) {
+    constructor(product_id: number, name: string, description: string, price: number, stock_quantity: number, category: Category, subcategory: Subcategory, reviews: ProductReview[], image_url: string, size: Size, created_at: Date, updated_at: Date) {
         this.product_id = product_id;
         this.name = name;
         this.description = description;
@@ -54,6 +65,7 @@ export class Products {
         this.stock_quantity = stock_quantity;
         this.category = category;
         this.subcategory = subcategory;
+        this.reviews = reviews;
         this.image_url = image_url;
         this.size = size;
         this.created_at = created_at;
