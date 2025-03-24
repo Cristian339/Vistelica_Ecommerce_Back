@@ -5,10 +5,10 @@ import { Products } from "./Products";
 @Entity({ schema: "vistelica" })
 export class Subcategory {
     @PrimaryGeneratedColumn({ type: "int" })
-    subcategory_id: number;
+    subcategory_id!: number;
 
     @Column({ unique: true, length: 100 })
-    name: string;
+    name!: string;
 
     @ManyToOne(() => Category, (category) => category.subcategories, { onDelete: "CASCADE", nullable: false })
     @JoinColumn({ name: "category_id" })

@@ -1,8 +1,8 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import { AppDataSource } from './Config/database'; // Importa la configuración de TypeORM
+import { AppDataSource } from './Config/database';
 import productRoutes from './Routes/productRoutes';
-import reviewRoutes from "./Routes/ReviewRoutes"; // Importa las rutas de productos
+import authRoutes from './Routes/authRoutes'; // Add this import
 
 dotenv.config();
 const app = express();
@@ -12,6 +12,7 @@ app.use(express.json());
 
 // Usa las rutas
 app.use('/api', productRoutes);
+app.use('/api', authRoutes);
 app.use('/api', reviewRoutes);
 
 const start = async () => {

@@ -22,6 +22,7 @@ router.post('/products', async (req: Request, res: Response, next: NextFunction)
         next(error);
     }
 });
+
 router.delete('/products/:id', async (req: Request, res: Response, next: NextFunction) => {
     try {
         await productController.delete(req, res);
@@ -51,4 +52,5 @@ router.get('/products/category/:categoryId/subcategory/:subcategoryId', async (r
         next(error);
     }
 });
+
 export default router;

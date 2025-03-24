@@ -1,14 +1,20 @@
-import {Entity, PrimaryGeneratedColumn, Column, OneToOne, OneToMany} from "typeorm";
-import { Profile } from "./Profile";
-import {Review} from "./Review";
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 
-@Entity()
+export enum Role {
+    ADMIN = 0,
+    VENDEDOR = 1,
+    CLIENTE = 2
+}
+
+@Entity({ schema: 'vistelica' })
 export class User {
     @PrimaryGeneratedColumn()
     user_id: number;
 
     @Column({ length: 100 })
     name: string;
+    @Column({ length: 100 })
+    lastName!: string;
 
     @Column({ unique: true, length: 255, nullable: false })
     email: string;
