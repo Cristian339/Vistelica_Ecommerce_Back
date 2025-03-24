@@ -1,8 +1,8 @@
 import { EntityRepository, Repository } from "typeorm";
-import { ProductReview } from "../Entities/ProductReview";
+import { Review } from "../Entities/Review";
 
-@EntityRepository(ProductReview)
-export class ProductReviewRepository extends Repository<ProductReview> {
+@EntityRepository(Review)
+export class ProductReviewRepository extends Repository<Review> {
     async findAllWithUsersAndProducts() {
         return this.find({ relations: ["user", "product"] });
     }

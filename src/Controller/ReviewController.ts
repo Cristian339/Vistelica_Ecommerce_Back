@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import { ProductReviewService } from "../Service/ProductReviewService";
+import { ReviewService } from "../Service/ReviewService";
 
 export class ProductReviewController {
-    private productReviewService = new ProductReviewService();
+    private productReviewService = new ReviewService();
 
     constructor() {
         this.create = this.create.bind(this);
@@ -11,15 +11,17 @@ export class ProductReviewController {
         this.delete = this.delete.bind(this);
     }
 
-    //  Crear una reseña para un producto
+    // Crear una reseña para un producto
     async create(req: Request, res: Response): Promise<Response> {
         try {
-            const review = await this.productReviewService.createReview(req.body);
+            const { user_id, product_id, rating, review_text } = req.body; // Recibe los datos desde el cuerpo de la solicitud
+            const review = await this.productReviewService.createReview(user_id, product_id, rating, review_text);
             return res.status(201).json(review);
         } catch (error) {
             return res.status(500).json({ message: "Error creating review", error });
         }
     }
+
 
     //  Obtener todas las reseñas de un producto
     async getByProduct(req: Request, res: Response): Promise<Response> {

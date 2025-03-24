@@ -5,7 +5,7 @@ const router = express.Router();
 const productReviewController = new ProductReviewController();
 
 // Crear una nueva reseña
-router.post("/reviews", async (req: Request, res: Response, next: NextFunction) => {
+router.post("/review", async (req: Request, res: Response, next: NextFunction) => {
     console.log("POST /reviews");
     try {
         await productReviewController.create(req, res);

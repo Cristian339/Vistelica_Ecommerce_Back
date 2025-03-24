@@ -1,22 +1,22 @@
 import { Repository } from "typeorm";
-import { ProductReview } from "../entities/ProductReview";
+import { Review } from "../Entities/Review";
 import { User } from "../Entities/User";
 import { Products } from "../Entities/Products";
 import { AppDataSource } from "../Config/database";
 
-export class ProductReviewService {
-    private reviewRepository: Repository<ProductReview>;
+export class ReviewService {
+    private reviewRepository: Repository<Review>;
     private userRepository: Repository<User>;
     private productRepository: Repository<Products>;
 
     constructor() {
-        this.reviewRepository = AppDataSource.getRepository(ProductReview);
+        this.reviewRepository = AppDataSource.getRepository(Review);
         this.userRepository = AppDataSource.getRepository(User);
         this.productRepository = AppDataSource.getRepository(Products);
     }
 
     //  Crear una reseña de producto
-    async createReview(userId: number, productId: number, rating: number, reviewText: string): Promise<ProductReview> {
+    async createReview(userId: number, productId: number, rating: number, reviewText: string): Promise<Review> {
         try {
             const user = await this.userRepository.findOneBy({ user_id: userId });
             if (!user) throw new Error("User not found");
@@ -24,11 +24,12 @@ export class ProductReviewService {
             const product = await this.productRepository.findOneBy({ product_id: productId });
             if (!product) throw new Error("Product not found");
 
-            const review = new ProductReview();
+            const review = new Review();
             review.user = user;
             review.product = product;
             review.rating = rating;
             review.review_text = reviewText;
+            review.created_at = new Date();
 
             return await this.reviewRepository.save(review);
         } catch (error) {
@@ -38,7 +39,8 @@ export class ProductReviewService {
     }
 
     //  Obtener todas las reseñas de un producto
-    async getReviewsByProduct(productId: number): Promise<ProductReview[]> {
+
+    async getReviewsByProduct(productId: number): Promise<Review[]> {
         try {
             return await this.reviewRepository.find({
                 where: { product: { product_id: productId } },
@@ -50,8 +52,9 @@ export class ProductReviewService {
         }
     }
 
+
     //  Obtener todas las reseñas de un usuario
-    async getReviewsByUser(userId: number): Promise<ProductReview[]> {
+    async getReviewsByUser(userId: number): Promise<Review[]> {
         try {
             return await this.reviewRepository.find({
                 where: { user: { user_id: userId } },

@@ -1,6 +1,6 @@
 import {Entity, PrimaryGeneratedColumn, Column, OneToOne, OneToMany} from "typeorm";
 import { Profile } from "./Profile";
-import {ProductReview} from "./ProductReview";
+import {Review} from "./Review";
 
 @Entity()
 export class User {
@@ -32,9 +32,9 @@ export class User {
     // Relación con Profile
     @OneToOne(() => Profile, (profile) => profile.user)
     profile: Profile;
-    @OneToMany(() => ProductReview, (review) => review.user)
-    reviews: ProductReview[];
-    constructor(user_id: number, name: string, email: string, password: string, role: string, banned: boolean, banned_at: Date, ban_reason: string, profile: Profile, reviews: ProductReview[]) {
+    @OneToMany(() => Review, (review) => review.user)
+    reviews: Review[];
+    constructor(user_id: number, name: string, email: string, password: string, role: string, banned: boolean, banned_at: Date, ban_reason: string, profile: Profile, reviews: Review[]) {
         this.user_id = user_id;
         this.name = name;
         this.email = email;
