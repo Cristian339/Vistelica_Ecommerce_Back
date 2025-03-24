@@ -3,9 +3,9 @@ import {Review} from "./Review";
 import {Profile} from "./Profile";
 
 export enum Role {
-    ADMIN = "admin",
-    VENDEDOR = "vendedor",
-    CLIENTE = "cliente"
+    ADMIN = 0,
+    VENDEDOR = 1,
+    CLIENTE = 2
 }
 
 @Entity({ schema: 'vistelica' })
@@ -21,12 +21,11 @@ export class User {
     @Column({ unique: true, length: 255, nullable: false })
     email: string;
 
-
     @Column({ length: 255 })
     password: string;
 
-    @Column({ type: "enum", enum: ["admin", "vendedor", "cliente"], default: "cliente" })
-    role: string;
+    @Column({ type: "int", enum: Role, default: Role.CLIENTE })
+    role: Role;
 
     @Column({ default: false })
     banned: boolean;
@@ -42,7 +41,7 @@ export class User {
     profile: Profile;
     @OneToMany(() => Review, (review) => review.user)
     reviews: Review[];
-    constructor(user_id: number, name: string, email: string, password: string, role: string, banned: boolean, banned_at: Date, ban_reason: string, profile: Profile, reviews: Review[]) {
+    constructor(user_id: number, name: string, email: string, password: string, role: Role, banned: boolean, banned_at: Date, ban_reason: string, profile: Profile, reviews: Review[]) {
         this.user_id = user_id;
         this.name = name;
         this.email = email;

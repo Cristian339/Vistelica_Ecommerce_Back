@@ -12,7 +12,7 @@ export class UserRegisterDTO {
         this.lastName = data.lastName;
         this.email = data.email;
         this.password = data.password;
-        this.role = data.role;
+        this.role = data.role !== undefined ? Number(data.role) as Role : undefined;
     }
 
     validate(): string[] {
