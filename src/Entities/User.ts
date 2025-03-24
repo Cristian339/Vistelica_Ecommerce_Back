@@ -1,4 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, OneToOne, OneToMany} from "typeorm";
+import {Review} from "./Review";
+import {Profile} from "./Profile";
 
 export enum Role {
     ADMIN = 0,

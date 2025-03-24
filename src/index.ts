@@ -2,7 +2,8 @@ import express from 'express';
 import dotenv from 'dotenv';
 import { AppDataSource } from './Config/database';
 import productRoutes from './Routes/productRoutes';
-import authRoutes from './Routes/authRoutes'; // Add this import
+import authRoutes from './Routes/authRoutes';
+import reviewRoutes from "./Routes/ReviewRoutes"; // Add this import
 
 dotenv.config();
 const app = express();
