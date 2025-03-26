@@ -1,20 +1,27 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn } from "typeorm";
 import { User } from "./User";
+import { OrderDetail } from "./OrderDetail";
 
-@Entity()
+@Entity({ schema: 'vistelica' })
 export class Order {
     @PrimaryGeneratedColumn({ type: "int" })
-    order_id: number;
+    order_id?: number;
 
-    @ManyToOne(() => User)
-    user: User;
+    @ManyToOne(() => User, user => user.orders)
+    user?: User;
 
-    @Column({ length: 50 })
-    status: string;
+    @OneToMany(() => OrderDetail, orderDetail => orderDetail.order, { cascade: true })
+    orderDetails?: OrderDetail[];
 
-    @CreateDateColumn()
-    created_at: Date;
+    @Column({ type: "varchar", length: 50, nullable: true })
+    status?: string;
 
-    @UpdateDateColumn()
-    updated_at: Date;
+    @CreateDateColumn({ nullable: true })
+    created_at?: Date;
+
+    @UpdateDateColumn({ nullable: true })
+    updated_at?: Date;
+
+    @Column({ type: "varchar", length: 100, nullable: true })
+    session_id?: string | null;
 }

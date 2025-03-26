@@ -4,20 +4,20 @@ import { Order } from "./Order";
 @Entity()
 export class Payment {
     @PrimaryGeneratedColumn({ type: "int" })
-    payment_id: number;
+    payment_id: number | undefined;
 
     @ManyToOne(() => Order)
-    order: Order;
+    order: Order | undefined;
 
     @Column({ length: 50 })
-    payment_method: string;
+    payment_method: string | undefined;
 
     @Column({ length: 50 })
-    payment_status: string;
+    payment_status: string | undefined;
 
     @CreateDateColumn()
-    payment_date: Date;
+    payment_date: Date | undefined;
 
     @Column("decimal", { precision: 10, scale: 2 })
-    amount: number;
+    amount: number | undefined;
 }

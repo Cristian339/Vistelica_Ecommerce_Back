@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
+import { Order } from "./Order";
 
 export enum Role {
     ADMIN = "admin",
@@ -6,29 +7,33 @@ export enum Role {
     CLIENTE = "cliente"
 }
 
-@Entity()
+@Entity({ schema: 'vistelica' })
 export class User {
     @PrimaryGeneratedColumn({ type: "int" })
-    user_id!: number;
+    user_id?: number;
 
-    @Column({ length: 100 })
-    name!: string;
+    @Column({ length: 100, nullable: true })
+    name?: string;
 
-    @Column({ unique: true })
-    email!: string;
+    @Column({ unique: true, nullable: true })
+    email?: string;
 
-    @Column()
-    password!: string;
+    @Column({ nullable: true })
+    password?: string;
 
     @Column({ type: "enum", enum: Role, default: Role.CLIENTE })
-    role!: Role;
+    role?: Role;
 
     @Column({ default: false })
-    banned!: boolean;
+    banned?: boolean;
 
     @Column({ nullable: true, type: "timestamp" })
-    banned_at?: Date;
+    banned_at?: Date | null;
 
     @Column({ nullable: true, type: "text" })
-    ban_reason?: string;
+    ban_reason?: string | null;
+
+    // Relación con Order (un usuario puede tener muchos pedidos)
+    @OneToMany(() => Order, order => order.user)
+    orders?: Order[];
 }

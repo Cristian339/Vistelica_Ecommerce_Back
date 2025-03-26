@@ -1,6 +1,15 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    ManyToOne,
+    CreateDateColumn,
+    UpdateDateColumn,
+    OneToMany
+} from "typeorm";
 // Importa Subcategory desde Category.ts
 import { Subcategory } from "./Subcategory";
+import {OrderDetail} from "./OrderDetail";
 
 export enum Size {
     XS = "XS",
@@ -40,6 +49,9 @@ export class Products {
 
     @CreateDateColumn()
     created_at: Date;
+
+    @OneToMany(() => OrderDetail, orderDetail => orderDetail.product)
+    orderDetails?: OrderDetail[];
 
     @UpdateDateColumn()
     updated_at: Date;
