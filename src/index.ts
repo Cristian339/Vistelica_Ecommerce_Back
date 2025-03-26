@@ -4,7 +4,8 @@ import { AppDataSource } from './Config/database';
 import ProductRoutes from './Routes/ProductRoutes';
 import AuthRoutes from './Routes/AuthRoutes';
 import ReviewRoutes from "./Routes/ReviewRoutes";
-import ProfileRoutes from "./Routes/ProfileRoutes"; // Add this import
+import ProfileRoutes from "./Routes/ProfileRoutes";
+import OrderRoutes from "./Routes/OrderRoutes"; // Add this import
 
 dotenv.config();
 const app = express();
@@ -17,10 +18,7 @@ app.use('/api', ProductRoutes);
 app.use('/api', AuthRoutes);
 app.use('/api', ReviewRoutes);
 app.use('/api', ProfileRoutes);
-app.use('/api', productRoutes);
-app.use('/api', authRoutes);
-app.use('/api', reviewRoutes);
-app.use('/api', orderRoutes);
+app.use('/api', OrderRoutes);
 
 const start = async () => {
     try {
