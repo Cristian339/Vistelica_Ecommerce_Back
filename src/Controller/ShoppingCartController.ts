@@ -8,52 +8,132 @@ export class ShoppingCartController {
         this.orderDetailService = new ShoppingCartDetailService();
     }
 
-    // Añadir un producto al carrito (OrderDetail)
+    // Añadir un producto al carrito
     async addProductToOrder(req: Request, res: Response): Promise<void> {
         const { orderId, productId, quantity, price } = req.body;
+
+        if (!orderId || !productId || !quantity || !price) {
+            res.status(400).json({
+                success: false,
+                message: 'Datos incompletos. Se requieren orderId, productId, quantity y price'
+            });
+            return;
+        }
+
         try {
             const orderDetail = await this.orderDetailService.addProductToOrder(orderId, productId, quantity, price);
-            res.status(201).json(orderDetail);
+            res.status(201).json({
+                success: true,
+                message: 'Producto agregado al carrito correctamente',
+                data: orderDetail
+            });
         } catch (error) {
-            // @ts-ignore
-            res.status(500).json({ message: error.message });
+            res.status(500).json({
+                success: false,
+                message: 'Error al agregar producto al carrito'
+            });
         }
     }
 
-    // Eliminar un producto del carrito (OrderDetail)
+    // Eliminar un producto del carrito
     async removeProductFromOrder(req: Request, res: Response): Promise<void> {
         const { orderDetailId } = req.params;
+
+        if (!orderDetailId || isNaN(parseInt(orderDetailId))) {
+            res.status(400).json({
+                success: false,
+                message: 'ID de detalle de pedido inválido o faltante'
+            });
+            return;
+        }
+
         try {
             await this.orderDetailService.removeProductFromOrder(parseInt(orderDetailId));
-            res.status(200).json({ message: 'Product removed from order successfully' });
+            res.status(200).json({
+                success: true,
+                message: 'Producto eliminado del carrito correctamente'
+            });
         } catch (error) {
-            // @ts-ignore
-            res.status(500).json({ message: error.message });
+            res.status(500).json({
+                success: false,
+                message: 'Error al eliminar producto del carrito'
+            });
         }
     }
 
-    // Obtener los detalles de un pedido (OrderDetails)
+    // Obtener los detalles de un pedido
     async getOrderDetails(req: Request, res: Response): Promise<void> {
         const { orderId } = req.params;
+
+        if (!orderId || isNaN(parseInt(orderId))) {
+            res.status(400).json({
+                success: false,
+                message: 'ID de pedido inválido o faltante'
+            });
+            return;
+        }
+
         try {
             const orderDetails = await this.orderDetailService.getOrderDetails(parseInt(orderId));
-            res.status(200).json(orderDetails);
+
+            if (orderDetails.length === 0) {
+                res.status(404).json({
+                    success: false,
+                    message: 'No se encontraron productos en este carrito'
+                });
+                return;
+            }
+
+            res.status(200).json({
+                success: true,
+                message: 'Detalles del carrito obtenidos correctamente',
+                data: orderDetails
+            });
         } catch (error) {
-            // @ts-ignore
-            res.status(500).json({ message: error.message });
+            res.status(500).json({
+                success: false,
+                message: 'Error al obtener los detalles del carrito'
+            });
         }
     }
 
-    // Actualizar la cantidad de un producto en el carrito (OrderDetail)
+    // Actualizar la cantidad de un producto en el carrito
     async updateOrderDetailQuantity(req: Request, res: Response): Promise<void> {
         const { orderDetailId } = req.params;
         const { quantity } = req.body;
+
+        if (!orderDetailId || isNaN(parseInt(orderDetailId))) {
+            res.status(400).json({
+                success: false,
+                message: 'ID de detalle de pedido inválido o faltante'
+            });
+            return;
+        }
+
+        if (!quantity || isNaN(quantity)) {
+            res.status(400).json({
+                success: false,
+                message: 'Cantidad inválida o faltante'
+            });
+            return;
+        }
+
         try {
-            const orderDetail = await this.orderDetailService.updateOrderDetailQuantity(parseInt(orderDetailId), quantity);
-            res.status(200).json(orderDetail);
+            const orderDetail = await this.orderDetailService.updateOrderDetailQuantity(
+                parseInt(orderDetailId),
+                quantity
+            );
+
+            res.status(200).json({
+                success: true,
+                message: 'Cantidad actualizada correctamente',
+                data: orderDetail
+            });
         } catch (error) {
-            // @ts-ignore
-            res.status(500).json({ message: error.message });
+            res.status(500).json({
+                success: false,
+                message: 'Error al actualizar la cantidad del producto'
+            });
         }
     }
 }

@@ -1,29 +1,22 @@
-import { AppDataSource } from '../Config/database'; // Asegúrate de importar la fuente de datos correcta
+import { AppDataSource } from '../Config/database';
 import { Order } from '../Entities/Order';
 import { User } from '../Entities/User';
-import {ShoppingCartDetailService} from "./ShoppingCartDetailService";
-
-
+import { ShoppingCartDetailService } from "./ShoppingCartDetailService";
 
 export class ShoppingCartService {
-    // ... (código existente)
-    private orderRepository = AppDataSource.getRepository(Order); // Repositorio de Order
+    private orderRepository = AppDataSource.getRepository(Order);
     private userRepository = AppDataSource.getRepository(User);
-    private orderDetailService = new ShoppingCartDetailService();
-    // Crear un nuevo pedido (carrito) - ahora acepta sessionId para usuarios no autenticados
+
     async createOrder(userId?: number, sessionId?: string): Promise<Order> {
         try {
             let user: User | null = null;
 
             if (userId) {
-                // Verificar si el usuario existe si se proporciona userId
                 user = await this.userRepository.findOneBy({ user_id: userId });
                 if (!user) {
-                    throw new Error('User not found');
+                    throw new Error('Usuario no encontrado');
                 }
             }
-
-            // Crear el pedido
 
             const order = this.orderRepository.create({
                 // @ts-ignore
@@ -35,8 +28,8 @@ export class ShoppingCartService {
             // @ts-ignore
             return await this.orderRepository.save(order);
         } catch (error) {
-            console.error('Error creating order:', error);
-            throw new Error('Error creating order');
+            console.error('Error al crear el pedido:', error);
+            throw new Error('Error al crear el pedido');
         }
     }
 
@@ -45,17 +38,16 @@ export class ShoppingCartService {
             return await this.orderRepository.findOne({
                 where: {
                     user: { user_id: userId },
-                    status: "en proceso" // Solo carritos activos
+                    status: "en proceso"
                 },
                 relations: ["orderDetails", "orderDetails.product"],
             });
         } catch (error) {
-            console.error('Error fetching order by user id:', error);
-            throw new Error('Error fetching order by user id');
+            console.error('Error al obtener el pedido por ID de usuario:', error);
+            throw new Error('Error al obtener el pedido por ID de usuario');
         }
     }
 
-    // Obtener un pedido por su ID
     async getOrderById(orderId: number): Promise<Order | null> {
         try {
             const order = await this.orderRepository.findOne({
@@ -63,83 +55,77 @@ export class ShoppingCartService {
                 relations: ["user", "orderDetails"],
             });
             if (!order) {
-                throw new Error('Order not found');
+                throw new Error('Pedido no encontrado');
             }
             return order;
         } catch (error) {
-            console.error('Error fetching order by id:', error);
-            throw new Error('Error fetching order by id');
+            console.error('Error al obtener el pedido por ID:', error);
+            throw new Error('Error al obtener el pedido por ID');
         }
     }
 
-
-    // Obtener un pedido por sessionId (para usuarios no autenticados)
     async getOrderBySessionId(sessionId: string): Promise<Order | null> {
         try {
             return await this.orderRepository.findOne({
                 where: {
                     session_id: sessionId,
-                    status: "en proceso" // Solo carritos activos
+                    status: "en proceso"
                 },
                 relations: ["orderDetails", "orderDetails.product"],
             });
         } catch (error) {
-            console.error('Error fetching order by session id:', error);
-            throw new Error('Error fetching order by session id');
+            console.error('Error al obtener el pedido por ID de sesión:', error);
+            throw new Error('Error al obtener el pedido por ID de sesión');
         }
     }
 
-    // Asociar un carrito a un usuario cuando se registra o inicia sesión
     async associateOrderToUser(orderId: number, userId: number): Promise<Order> {
         try {
             const order = await this.orderRepository.findOneBy({ order_id: orderId });
             if (!order) {
-                throw new Error('Order not found');
+                throw new Error('Pedido no encontrado');
             }
 
             const user = await this.userRepository.findOneBy({ user_id: userId });
             if (!user) {
-                throw new Error('User not found');
+                throw new Error('Usuario no encontrado');
             }
 
             order.user = user;
-            order.session_id = null; // Eliminar el session_id ya que ahora está asociado a un usuario
+            order.session_id = null;
 
             return await this.orderRepository.save(order);
         } catch (error) {
-            console.error('Error associating order to user:', error);
-            throw new Error('Error associating order to user');
+            console.error('Error al asociar pedido al usuario:', error);
+            throw new Error('Error al asociar pedido al usuario');
         }
     }
 
-
-    // Actualizar el estado de un pedido
     async updateOrderStatus(orderId: number, status: string): Promise<Order> {
         try {
             const order = await this.orderRepository.findOneBy({ order_id: orderId });
             if (!order) {
-                throw new Error('Order not found');
+                throw new Error('Pedido no encontrado');
             }
             order.status = status;
             return await this.orderRepository.save(order);
         } catch (error) {
-            console.error('Error updating order status:', error);
-            throw new Error('Error updating order status');
+            console.error('Error al actualizar el estado del pedido:', error);
+            throw new Error('Error al actualizar el estado del pedido');
         }
     }
 
-    // Eliminar un pedido por su ID
     async deleteOrder(orderId: number): Promise<Order> {
         try {
             const order = await this.orderRepository.findOneBy({ order_id: orderId });
             if (!order) {
-                throw new Error('Order not found');
+                throw new Error('Pedido no encontrado');
             }
             await this.orderRepository.delete(orderId);
             return order;
         } catch (error) {
-            console.error('Error deleting order:', error);
-            throw new Error('Error deleting order');
+            console.error('Error al eliminar el pedido:', error);
+            throw new Error('Error al eliminar el pedido');
         }
     }
 }

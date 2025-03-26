@@ -1,25 +1,92 @@
-import express from 'express';
+import express, {Router, Request, Response, NextFunction} from 'express';
 import { ShoppingCartController } from '../Controller/ShoppingCartController';
 import { ShoppingCartDetailController } from '../Controller/ShoppingCartDetailController';
 
 const router = express.Router();
-const orderController = new ShoppingCartDetailController();
-const orderDetailController = new ShoppingCartController();
+const shoppingCartDetailController = new ShoppingCartDetailController();
+const shoppingCartController = new ShoppingCartController();
 
-// Rutas para Order (Carrito)
-router.post('/order', orderController.createOrder.bind(orderController)); // Crear nuevo carrito
-router.get('/order', orderController.getCurrentOrder.bind(orderController)); // Obtener carrito actual
-router.post('/order/associate', orderController.associateOrderToUser.bind(orderController)); // Asociar carrito a usuario
 
-// Rutas para OrderDetail (Items del carrito)
-router.post('/orderD/items', orderDetailController.addProductToOrder.bind(orderDetailController)); // Añadir producto
-router.get('/orderD/items', orderDetailController.getOrderDetails.bind(orderDetailController)); // Listar productos
-router.put('/orderD/items/:orderDetailId/quantity', orderDetailController.updateOrderDetailQuantity.bind(orderDetailController)); // Actualizar cantidad
-router.delete('/orderD/items/:orderDetailId', orderDetailController.removeProductFromOrder.bind(orderDetailController)); // Eliminar producto
+router.post('/order', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await shoppingCartDetailController.createOrder(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
 
-// Rutas para gestión de pedidos completos (solo para usuarios autenticados)
-router.get('/orders/:orderId', orderController.getOrderById.bind(orderController)); // Ver pedido específico
-router.put('/orders/:orderId/status', orderController.updateOrderStatus.bind(orderController)); // Actualizar estado
-router.delete('/orders/:orderId', orderController.deleteOrder.bind(orderController)); // Eliminar pedido
+router.get('/order', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await shoppingCartDetailController.getCurrentOrder(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+
+router.post('/order/associate', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await shoppingCartDetailController.associateOrderToUser(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Rutas para ShoppingCartDetail (Items del carrito)
+router.post('/orderD/items', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await shoppingCartController.addProductToOrder(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+
+router.get('/orderD/items', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await shoppingCartController.getOrderDetails(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+
+router.put('/orderD/items/:orderDetailId/quantity', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await shoppingCartController.updateOrderDetailQuantity(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+
+router.delete('/orderD/items/:orderDetailId', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await shoppingCartController.removeProductFromOrder(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Rutas para gestión de pedidos completos
+router.get('/orders/:orderId', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await shoppingCartDetailController.getOrderById(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+
+router.put('/orders/:orderId/status', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await shoppingCartDetailController.updateOrderStatus(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+
+router.delete('/orders/:orderId', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await shoppingCartDetailController.deleteOrder(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
 
 export default router;

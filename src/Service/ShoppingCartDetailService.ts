@@ -1,27 +1,27 @@
-import { AppDataSource } from '../Config/database'; // Asegúrate de importar la fuente de datos correcta
+import { AppDataSource } from '../Config/database';
 import { OrderDetail } from '../Entities/OrderDetail';
 import { Order } from '../Entities/Order';
 import { Products } from '../Entities/Products';
 
 export class ShoppingCartDetailService {
 
-    private orderDetailRepository = AppDataSource.getRepository(OrderDetail); // Repositorio de OrderDetail
+    private orderDetailRepository = AppDataSource.getRepository(OrderDetail);
 
     // Añadir un producto al carrito (OrderDetail)
     async addProductToOrder(orderId: number, productId: number, quantity: number, price: number): Promise<OrderDetail> {
         try {
-            const order = { order_id: orderId } as Order; // Simula un pedido con el ID proporcionado
-            const product = { product_id: productId } as Products; // Simula un producto con el ID proporcionado
+            const order = { order_id: orderId } as Order;
+            const product = { product_id: productId } as Products;
             const orderDetail = this.orderDetailRepository.create({
                 order,
                 product,
                 quantity,
                 price,
-            }); // Crear una nueva entidad OrderDetail
-            return await this.orderDetailRepository.save(orderDetail); // Guardar el detalle del pedido en la base de datos
+            });
+            return await this.orderDetailRepository.save(orderDetail);
         } catch (error) {
-            console.error('Error adding product to order:', error);
-            throw new Error('Error adding product to order');
+            console.error('Error al agregar producto al pedido:', error);
+            throw new Error('Error al agregar producto al pedido');
         }
     }
 
@@ -30,12 +30,12 @@ export class ShoppingCartDetailService {
         try {
             const orderDetail = await this.orderDetailRepository.findOneBy({ order_detail_id: orderDetailId });
             if (!orderDetail) {
-                throw new Error('Order detail not found');
+                throw new Error('Detalle de pedido no encontrado');
             }
             await this.orderDetailRepository.delete(orderDetailId);
         } catch (error) {
-            console.error('Error removing product from order:', error);
-            throw new Error('Error removing product from order');
+            console.error('Error al eliminar producto del pedido:', error);
+            throw new Error('Error al eliminar producto del pedido');
         }
     }
 
@@ -44,12 +44,12 @@ export class ShoppingCartDetailService {
         try {
             const orderDetails = await this.orderDetailRepository.find({
                 where: { order: { order_id: orderId } },
-                relations: ["product"], // Incluir relación con Product
+                relations: ["product"],
             });
             return orderDetails;
         } catch (error) {
-            console.error('Error fetching order details:', error);
-            throw new Error('Error fetching order details');
+            console.error('Error al obtener detalles del pedido:', error);
+            throw new Error('Error al obtener detalles del pedido');
         }
     }
 
@@ -58,13 +58,13 @@ export class ShoppingCartDetailService {
         try {
             const orderDetail = await this.orderDetailRepository.findOneBy({ order_detail_id: orderDetailId });
             if (!orderDetail) {
-                throw new Error('Order detail not found');
+                throw new Error('Detalle de pedido no encontrado');
             }
             orderDetail.quantity = quantity;
             return await this.orderDetailRepository.save(orderDetail);
         } catch (error) {
-            console.error('Error updating order detail quantity:', error);
-            throw new Error('Error updating order detail quantity');
+            console.error('Error al actualizar cantidad del producto:', error);
+            throw new Error('Error al actualizar cantidad del producto');
         }
     }
 }
