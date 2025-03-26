@@ -1,9 +1,10 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import { AppDataSource } from './Config/database';
-import productRoutes from './Routes/productRoutes';
-import authRoutes from './Routes/authRoutes';
-import reviewRoutes from "./Routes/ReviewRoutes"; // Add this import
+import ProductRoutes from './Routes/ProductRoutes';
+import AuthRoutes from './Routes/AuthRoutes';
+import ReviewRoutes from "./Routes/ReviewRoutes";
+import ProfileRoutes from "./Routes/ProfileRoutes"; // Add this import
 
 dotenv.config();
 const app = express();
@@ -12,9 +13,10 @@ const PORT = process.env.PORT || 5000;
 app.use(express.json());
 
 // Usa las rutas
-app.use('/api', productRoutes);
-app.use('/api', authRoutes);
-app.use('/api', reviewRoutes);
+app.use('/api', ProductRoutes);
+app.use('/api', AuthRoutes);
+app.use('/api', ReviewRoutes);
+app.use('/api', ProfileRoutes);
 
 const start = async () => {
     try {

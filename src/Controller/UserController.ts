@@ -86,6 +86,8 @@ export class UserController {
         }
     }
 
+    
+
 /*    async protected(req: Request, res: Response): Promise<Response> {
         return res.status(200).json({message: "Ruta protegida"});
     }*/

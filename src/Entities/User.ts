@@ -13,11 +13,6 @@ export class User {
     @PrimaryGeneratedColumn()
     user_id: number;
 
-    @Column({ length: 100 })
-    name: string;
-    @Column({ length: 100 })
-    lastName!: string;
-
     @Column({ unique: true, length: 255, nullable: false })
     email: string;
 
@@ -36,14 +31,14 @@ export class User {
     @Column({ nullable: true, type: "text" })
     ban_reason: string;
 
-    // Relación con Profile
     @OneToOne(() => Profile, (profile) => profile.user)
     profile: Profile;
+
     @OneToMany(() => Review, (review) => review.user)
     reviews: Review[];
-    constructor(user_id: number, name: string, email: string, password: string, role: Role, banned: boolean, banned_at: Date, ban_reason: string, profile: Profile, reviews: Review[]) {
+
+    constructor(user_id: number, email: string, password: string, role: Role, banned: boolean, banned_at: Date, ban_reason: string, profile: Profile, reviews: Review[]) {
         this.user_id = user_id;
-        this.name = name;
         this.email = email;
         this.password = password;
         this.role = role;
