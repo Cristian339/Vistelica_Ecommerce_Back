@@ -80,4 +80,31 @@ export class UserService {
 
         await this.userRepository.remove(user);
     }
+
+    async changePassword(password: string, newPassword: string, token: string): Promise<void> {
+        const jwtService = new JWTService();
+
+        const profile = await jwtService.extractPerfilToken(token, this);
+
+        const user = await this.userRepository.findOne({
+            where: {user_id: profile.user.user_id}
+        });
+
+        if (!user) {
+            throw new Error('Usuario no encontrado');
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            throw new Error('Contraseña incorrecta');
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        user.password = hashedPassword;
+        await this.userRepository.save(user);
+    }
+
+
 }

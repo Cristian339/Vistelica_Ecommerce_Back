@@ -17,4 +17,14 @@ router.delete('/account', (req: Request, res: Response, next: NextFunction) => {
     }
 });
 
+router.post('/change-password', (req: Request, res: Response, next: NextFunction) => {
+    auth.authenticate(req, res, next);
+}, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await profileController.changePassword(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+
 export default router;
