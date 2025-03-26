@@ -3,7 +3,8 @@ import dotenv from 'dotenv';
 import { AppDataSource } from './Config/database';
 import productRoutes from './Routes/productRoutes';
 import authRoutes from './Routes/authRoutes';
-import reviewRoutes from "./Routes/ReviewRoutes"; // Add this import
+import reviewRoutes from "./Routes/ReviewRoutes";
+import orderRoutes from "./Routes/OrderRoutes"; // Add this import
 
 dotenv.config();
 const app = express();
@@ -15,6 +16,7 @@ app.use(express.json());
 app.use('/api', productRoutes);
 app.use('/api', authRoutes);
 app.use('/api', reviewRoutes);
+app.use('/api', orderRoutes);
 
 const start = async () => {
     try {
