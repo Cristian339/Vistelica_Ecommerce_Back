@@ -15,7 +15,7 @@ export class Order {
     order_id!: number;
 
     @ManyToOne(() => User)
-    @JoinColumn({ name: "order_id" })
+    @JoinColumn({ name: "user_id" })
     user!: User;
 
     @Column({ length: 50 })

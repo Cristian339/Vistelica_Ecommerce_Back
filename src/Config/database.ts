@@ -5,6 +5,8 @@ import {Category} from '../Entities/Category';
 import {Subcategory} from '../Entities/Subcategory';
 import {Review} from "../Entities/Review";
 import {Profile} from "../Entities/Profile";
+import {Order} from "../Entities/Order";
+import {OrderDetail} from "../Entities/OrderDetail";
 
 export const AppDataSource = new DataSource({
     type: 'postgres', // Base de datos Postgres
@@ -14,7 +16,7 @@ export const AppDataSource = new DataSource({
     password: 'root', // Contraseña de la base de datos
     database: 'postgres', // Nombre de la base de datos
     schema: 'vistelica',
-    entities: [User, Profile, Products, Category, Subcategory, Review],
+    entities: [User, Profile, Products, Category, Subcategory, Review,Order, OrderDetail,],
     synchronize: true,
     logging: false,
     migrations: [],

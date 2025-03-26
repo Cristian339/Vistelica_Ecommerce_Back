@@ -3,15 +3,22 @@ import { OrderService } from "../Service/OrderService";
 import { AppDataSource } from "../Config/database";
 import { User } from "../Entities/User";
 import { Products } from "../Entities/Products";
+import {Repository} from "typeorm";
+import {Order} from "../Entities/Order";
+import {OrderDetail} from "../Entities/OrderDetail";
 
 export class OrderController {
     private orderService: OrderService;
+    private orderRepository: Repository<Order>;
+    private orderDetailRepository: Repository<OrderDetail>;
 
     constructor() {
         this.orderService = new OrderService();
+        this.orderRepository = AppDataSource.getRepository(Order);
+        this.orderDetailRepository = AppDataSource.getRepository(OrderDetail);
     }
 
-    /** 🔹 Crear un pedido */
+    // Crear un pedido
     async createOrder(req: Request, res: Response): Promise<Response> {
         try {
             const { userId, products } = req.body;
@@ -42,7 +49,7 @@ export class OrderController {
 
     }
 
-    /** 🔹 Obtener pedidos de un usuario */
+    //Obtener pedidos de un usuario
     async getOrdersByUser(req: Request, res: Response): Promise<Response> {
         try {
             const userId = Number(req.params.userId);
@@ -52,14 +59,14 @@ export class OrderController {
             return res.status(200).json(orders);
         } catch (error) {
             if (error instanceof Error) {
-                return res.status(500).json({ message: "Error creando pedido", error: error.message });
+                return res.status(500).json({ message: "Error obteniendo pedido", error: error.message });
             }
-            return res.status(500).json({ message: "Error creando pedido", error: "Unknown error" });
+            return res.status(500).json({ message: "Error obteniendo pedido", error: "Unknown error" });
         }
 
     }
 
-    /** 🔹 Obtener detalles de un pedido */
+    // Obtener detalles de un pedido
     async getOrderDetails(req: Request, res: Response): Promise<Response> {
         try {
             const orderId = Number(req.params.orderId);
@@ -69,14 +76,14 @@ export class OrderController {
             return res.status(200).json(orderDetails);
         }catch (error) {
             if (error instanceof Error) {
-                return res.status(500).json({ message: "Error creando pedido", error: error.message });
+                return res.status(500).json({ message: "Error obteniendo pedido", error: error.message });
             }
-            return res.status(500).json({ message: "Error creando pedido", error: "Unknown error" });
+            return res.status(500).json({ message: "Error obteniendo pedido", error: "Unknown error" });
         }
 
     }
 
-    /** 🔹 Actualizar estado de un pedido */
+    // Actualizar estado de un pedido
     async updateOrderStatus(req: Request, res: Response): Promise<Response> {
         try {
             const { status } = req.body;
@@ -94,30 +101,36 @@ export class OrderController {
             return res.status(200).json({ message: "Order status updated successfully" });
         }catch (error) {
             if (error instanceof Error) {
-                return res.status(500).json({ message: "Error creando pedido", error: error.message });
+                return res.status(500).json({ message: "Error actualizado pedido", error: error.message });
             }
-            return res.status(500).json({ message: "Error creando pedido", error: "Unknown error" });
+            return res.status(500).json({ message: "Error actualizado pedido", error: "Unknown error" });
         }
 
     }
 
-    /** 🔹 Cancelar un pedido */
+    // Cancelar un pedido
     async cancelOrder(req: Request, res: Response): Promise<Response> {
         try {
             const orderId = Number(req.params.orderId);
             if (isNaN(orderId)) return res.status(400).json({ message: "Invalid order ID" });
 
+            // Obtener detalles del pedido
             const order = await this.orderService.getOrderDetails(orderId);
             if (!order) return res.status(404).json({ message: "Order not found" });
 
-            await this.orderService.cancelOrder(orderId);
-            return res.status(200).json({ message: "Order cancelled successfully" });
-        }catch (error) {
-            if (error instanceof Error) {
-                return res.status(500).json({ message: "Error creando pedido", error: error.message });
-            }
-            return res.status(500).json({ message: "Error creando pedido", error: "Unknown error" });
-        }
+            // Eliminar los detalles del pedido
+            await this.orderDetailRepository.delete({ order: { order_id: orderId } });
 
+            // Eliminar el pedido
+            await this.orderRepository.delete(orderId);
+
+            return res.status(200).json({ message: "El pedido fue exitosamente cancelado" });
+        } catch (error) {
+            if (error instanceof Error) {
+                return res.status(500).json({ message: "Error eliminando pedido", error: error.message });
+            }
+            return res.status(500).json({ message: "Error eliminando pedido", error: "Unknown error" });
+        }
     }
+
 }
