@@ -1,9 +1,9 @@
 import express from 'express';
 import { ShoppingCartController } from '../Controller/ShoppingCartController';
-import { ShoppingCartDetailService} from "../Service/ShoppingCartDetailService";
+import { ShoppingCartDetailController } from '../Controller/ShoppingCartDetailController';
 
 const router = express.Router();
-const orderController = new ShoppingCartDetailService();
+const orderController = new ShoppingCartDetailController();
 const orderDetailController = new ShoppingCartController();
 
 // Rutas para Order (Carrito)

@@ -3,7 +3,7 @@ import { ShoppingCartService } from '../Service/ShoppingCartService';
 import {Order} from "../Entities/Order";
 // @ts-ignore
 import { v4 as uuidv4 } from 'uuid';
-export class OrderController {
+export class ShoppingCartDetailController {
     private orderService: ShoppingCartService;
 
     constructor() {
