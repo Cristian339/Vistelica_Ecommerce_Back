@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    ManyToOne,
+    CreateDateColumn,
+    UpdateDateColumn,
+    JoinColumn
+} from "typeorm";
 import { User } from "./User";
 
 @Entity({ schema: 'vistelica' })
@@ -7,6 +15,7 @@ export class Order {
     order_id!: number;
 
     @ManyToOne(() => User)
+    @JoinColumn({ name: "user_id" })
     user!: User;
 
     @Column({ length: 50 })
