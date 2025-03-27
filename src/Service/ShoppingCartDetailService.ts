@@ -67,4 +67,55 @@ export class ShoppingCartDetailService {
             throw new Error('Error al actualizar cantidad del producto');
         }
     }
+
+
+    async calculateTotalPrice(userId?: number, sessionId?: string): Promise<{
+        totalPrice: number,
+        itemCount: number,
+        orderDetails: OrderDetail[]
+    }> {
+        try {
+            let orderDetails: OrderDetail[] = [];
+
+            if (userId) {
+                // Obtener detalles de pedidos para un usuario específico
+                const orders = await this.orderDetailRepository.find({
+                    where: { order: { user: { user_id: userId } } },
+                    relations: ["order", "product"]
+                });
+                orderDetails = orders;
+            } else if (sessionId) {
+                // Obtener detalles de pedidos para una sesión específica
+                const orders = await this.orderDetailRepository.find({
+                    where: { order: { session_id: sessionId } },
+                    relations: ["order", "product"]
+                });
+                orderDetails = orders;
+            } else {
+                throw new Error('Se requiere userId o sessionId');
+            }
+
+            if (orderDetails.length === 0) {
+                return {
+                    totalPrice: 0,
+                    itemCount: 0,
+                    orderDetails: []
+                };
+            }
+
+            // Calcular el total
+            const totalPrice = orderDetails.reduce((sum, item) => {
+                return sum + (item.price || 0) * (item.quantity || 0);
+            }, 0);
+
+            return {
+                totalPrice: parseFloat(totalPrice.toFixed(2)),
+                itemCount: orderDetails.length,
+                orderDetails
+            };
+        } catch (error) {
+            console.error('Error al calcular el precio total:', error);
+            throw new Error('Error al calcular el precio total');
+        }
+    }
 }

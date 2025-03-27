@@ -1,7 +1,6 @@
 import { AppDataSource } from '../Config/database';
 import { Order } from '../Entities/Order';
 import { User } from '../Entities/User';
-import { ShoppingCartDetailService } from "./ShoppingCartDetailService";
 
 export class ShoppingCartService {
     private orderRepository = AppDataSource.getRepository(Order);
@@ -21,7 +20,7 @@ export class ShoppingCartService {
             const order = this.orderRepository.create({
                 // @ts-ignore
                 user,
-                status: "en proceso",
+                status: "en carro",
                 session_id: sessionId
             });
 
@@ -38,7 +37,7 @@ export class ShoppingCartService {
             return await this.orderRepository.findOne({
                 where: {
                     user: { user_id: userId },
-                    status: "en proceso"
+                    status: "en carro"
                 },
                 relations: ["orderDetails", "orderDetails.product"],
             });
@@ -51,7 +50,9 @@ export class ShoppingCartService {
     async getOrderById(orderId: number): Promise<Order | null> {
         try {
             const order = await this.orderRepository.findOne({
-                where: { order_id: orderId },
+                where: { order_id: orderId,
+                    status: "en carro"
+                },
                 relations: ["user", "orderDetails"],
             });
             if (!order) {
@@ -69,7 +70,7 @@ export class ShoppingCartService {
             return await this.orderRepository.findOne({
                 where: {
                     session_id: sessionId,
-                    status: "en proceso"
+                    status: "en carro"
                 },
                 relations: ["orderDetails", "orderDetails.product"],
             });

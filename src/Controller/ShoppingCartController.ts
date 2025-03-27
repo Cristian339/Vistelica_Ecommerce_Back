@@ -136,4 +136,43 @@ export class ShoppingCartController {
             });
         }
     }
+
+
+    async getCartTotal(req: Request, res: Response): Promise<void> {
+        const { userId, sessionId } = req.query; // Cambia a query params
+
+        try {
+            if (!userId && !sessionId) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Se requiere userId o sessionId'
+                });
+                return;
+            }
+
+            const result = await this.orderDetailService.calculateTotalPrice(
+                userId ? Number(userId) : undefined,
+                sessionId as string | undefined
+            );
+
+            res.status(200).json({
+                total: result.totalPrice,
+                itemCount: result.itemCount,
+                items: result.orderDetails.map(item => ({
+                    productId: item.product?.product_id,
+                    name: item.product?.name,
+                    quantity: item.quantity,
+                    price: item.price,
+                    subtotal: (item.price || 0) * (item.quantity || 0)
+                }))
+
+            });
+        } catch (error) {
+            res.status(500).json({
+                success: false,
+                message: 'Error al calcular el total del carrito',
+                error: error instanceof Error ? error.message : 'Error desconocido'
+            });
+        }
+    }
 }

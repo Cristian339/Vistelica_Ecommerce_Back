@@ -241,8 +241,7 @@ export class ShoppingCartDetailController {
         } catch (error) {
             res.status(500).json({
                 success: false,
-                message: 'Error al eliminar el carrito',
-                error: error instanceof Error ? error.message : 'Error desconocido'
+                message: 'Error al eliminar el carrito'
             });
         }
     }

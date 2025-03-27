@@ -1,3 +1,4 @@
+// cartRoutes.ts
 import express, {Router, Request, Response, NextFunction} from 'express';
 import { ShoppingCartController } from '../Controller/ShoppingCartController';
 import { ShoppingCartDetailController } from '../Controller/ShoppingCartDetailController';
@@ -6,8 +7,8 @@ const router = express.Router();
 const shoppingCartDetailController = new ShoppingCartDetailController();
 const shoppingCartController = new ShoppingCartController();
 
-
-router.post('/order', async (req: Request, res: Response, next: NextFunction) => {
+// Rutas principales del carrito
+router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     try {
         await shoppingCartDetailController.createOrder(req, res);
     } catch (error) {
@@ -15,7 +16,7 @@ router.post('/order', async (req: Request, res: Response, next: NextFunction) =>
     }
 });
 
-router.get('/order', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     try {
         await shoppingCartDetailController.getCurrentOrder(req, res);
     } catch (error) {
@@ -23,7 +24,7 @@ router.get('/order', async (req: Request, res: Response, next: NextFunction) => 
     }
 });
 
-router.post('/order/associate', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/associate', async (req: Request, res: Response, next: NextFunction) => {
     try {
         await shoppingCartDetailController.associateOrderToUser(req, res);
     } catch (error) {
@@ -31,8 +32,8 @@ router.post('/order/associate', async (req: Request, res: Response, next: NextFu
     }
 });
 
-// Rutas para ShoppingCartDetail (Items del carrito)
-router.post('/orderD/items', async (req: Request, res: Response, next: NextFunction) => {
+// Rutas para items del carrito
+router.post('/items', async (req: Request, res: Response, next: NextFunction) => {
     try {
         await shoppingCartController.addProductToOrder(req, res);
     } catch (error) {
@@ -40,7 +41,8 @@ router.post('/orderD/items', async (req: Request, res: Response, next: NextFunct
     }
 });
 
-router.get('/orderD/items', async (req: Request, res: Response, next: NextFunction) => {
+// En cartRoutes.ts
+router.get('/items/:orderId', async (req: Request, res: Response, next: NextFunction) => {
     try {
         await shoppingCartController.getOrderDetails(req, res);
     } catch (error) {
@@ -48,7 +50,7 @@ router.get('/orderD/items', async (req: Request, res: Response, next: NextFuncti
     }
 });
 
-router.put('/orderD/items/:orderDetailId/quantity', async (req: Request, res: Response, next: NextFunction) => {
+router.put('/items/:itemId/quantity', async (req: Request, res: Response, next: NextFunction) => {
     try {
         await shoppingCartController.updateOrderDetailQuantity(req, res);
     } catch (error) {
@@ -56,7 +58,7 @@ router.put('/orderD/items/:orderDetailId/quantity', async (req: Request, res: Re
     }
 });
 
-router.delete('/orderD/items/:orderDetailId', async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/items/:itemId', async (req: Request, res: Response, next: NextFunction) => {
     try {
         await shoppingCartController.removeProductFromOrder(req, res);
     } catch (error) {
@@ -64,26 +66,10 @@ router.delete('/orderD/items/:orderDetailId', async (req: Request, res: Response
     }
 });
 
-// Rutas para gestión de pedidos completos
-router.get('/orders/:orderId', async (req: Request, res: Response, next: NextFunction) => {
+// Ruta para obtener el total del carrito
+router.get('/total', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await shoppingCartDetailController.getOrderById(req, res);
-    } catch (error) {
-        next(error);
-    }
-});
-
-router.put('/orders/:orderId/status', async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        await shoppingCartDetailController.updateOrderStatus(req, res);
-    } catch (error) {
-        next(error);
-    }
-});
-
-router.delete('/orders/:orderId', async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        await shoppingCartDetailController.deleteOrder(req, res);
+        await shoppingCartController.getCartTotal(req, res);
     } catch (error) {
         next(error);
     }
