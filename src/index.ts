@@ -5,9 +5,10 @@ import ProductRoutes from './Routes/ProductRoutes';
 import AuthRoutes from './Routes/AuthRoutes';
 import ReviewRoutes from "./Routes/ReviewRoutes";
 import ProfileRoutes from "./Routes/ProfileRoutes";
-import OrderRoutes from "./Routes/OrderRoutes"; // Add this import
+import OrderRoutes from "./Routes/OrderRoutes";
 import CartRoutes from "./Routes/CartRoutes";
 import AdminRoutes from "./Routes/AdminRoutes";
+import WhishlistRoutes from "./Routes/WishlistRoutes";
 import "reflect-metadata";
 import cors from 'cors';
 
@@ -27,6 +28,7 @@ app.use('/api', ProfileRoutes);
 app.use('/api', OrderRoutes);
 app.use('/api', CartRoutes);
 app.use('/api', AdminRoutes);
+app.use('/api', WhishlistRoutes);
 
 const start = async () => {
     try {
