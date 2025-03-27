@@ -10,6 +10,7 @@ import {
 import { Subcategory } from "./Subcategory";
 import { Category } from "./Category";
 import {Review} from "./Review";
+import {OrderDetail} from "./OrderDetail";
 
 export enum Size {
     XS = "XS",
@@ -55,6 +56,9 @@ export class Products {
 
     @CreateDateColumn()
     created_at: Date;
+
+    @OneToMany(() => OrderDetail, orderDetail => orderDetail.product)
+    orderDetails?: OrderDetail[];
 
     @UpdateDateColumn()
     updated_at: Date;

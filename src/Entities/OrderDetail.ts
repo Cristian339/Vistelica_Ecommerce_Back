@@ -11,6 +11,9 @@ export class OrderDetail {
     @JoinColumn({ name: "order_id" })
     order!: Order;
 
+    // @ManyToOne(() => Order, order => order.orderDetails)
+    // order?: Order;
+
     @ManyToOne(() => Products)
     @JoinColumn({ name: "product_id" })
     product!: Products;
