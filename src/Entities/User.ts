@@ -1,4 +1,4 @@
-import {Entity, PrimaryGeneratedColumn, Column, OneToOne, OneToMany} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, OneToOne, OneToMany, JoinColumn} from "typeorm";
 import {Review} from "./Review";
 import {Profile} from "./Profile";
 import {Order} from "./Order";
@@ -42,12 +42,11 @@ export class User {
     @OneToMany(() => Wishlist, (wishlist) => wishlist.user)
     wishlists: Wishlist[];
 
-
-    constructor(user_id: number, email: string, password: string, role: Role, banned: boolean, banned_at: Date, ban_reason: string, profile: Profile, reviews: Review[], wishlists: Wishlist[]) {
     @OneToMany(() => Order, order => order.user)
     orders?: Order[];
 
-    constructor(user_id: number, email: string, password: string, role: Role, banned: boolean, banned_at: Date, ban_reason: string, profile: Profile, reviews: Review[]) {
+
+    constructor(user_id: number, email: string, password: string, role: Role, banned: boolean, banned_at: Date | null, ban_reason: string | null, profile: Profile, reviews: Review[], wishlists: Wishlist[], orders: Order[]) {
         this.user_id = user_id;
         this.email = email;
         this.password = password;
@@ -58,5 +57,6 @@ export class User {
         this.profile = profile;
         this.reviews = reviews;
         this.wishlists = wishlists;
+        this.orders = orders;
     }
 }

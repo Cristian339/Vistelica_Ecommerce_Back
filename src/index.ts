@@ -5,14 +5,14 @@ import ProductRoutes from './Routes/ProductRoutes';
 import AuthRoutes from './Routes/AuthRoutes';
 import ReviewRoutes from "./Routes/ReviewRoutes";
 import ProfileRoutes from "./Routes/ProfileRoutes";
-import OrderRoutes from "./Routes/OrderRoutes"; // Add this import
+import OrderRoutes from "./Routes/OrderRoutes";
 import CartRoutes from "./Routes/CartRoutes";
 import AdminRoutes from "./Routes/AdminRoutes";
-import "reflect-metadata";
-import cors from 'cors';
-
-import OrderRoutes from "./Routes/OrderRoutes";
 import WhishlistRoutes from "./Routes/WishlistRoutes";
+import "reflect-metadata";
+
+
+
 
 dotenv.config();
 const app = express();
