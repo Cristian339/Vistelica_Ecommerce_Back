@@ -6,13 +6,15 @@ import AuthRoutes from './Routes/AuthRoutes';
 import ReviewRoutes from "./Routes/ReviewRoutes";
 import ProfileRoutes from "./Routes/ProfileRoutes";
 import OrderRoutes from "./Routes/OrderRoutes"; // Add this import
+import CartRoutes from "./Routes/CartRoutes";
+import AdminRoutes from "./Routes/AdminRoutes";
 import "reflect-metadata";
 import cors from 'cors';
-import routes from './Routes';
+
 
 dotenv.config();
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 // Middlewares esenciales
 app.use(cors());
@@ -25,8 +27,8 @@ app.use('/api', AuthRoutes);
 app.use('/api', ReviewRoutes);
 app.use('/api', ProfileRoutes);
 app.use('/api', OrderRoutes);
-// Rutas con prefijo /api
-app.use('/api', routes);
+app.use('/api', CartRoutes);
+app.use('/api', AdminRoutes);
 
 const start = async () => {
     try {

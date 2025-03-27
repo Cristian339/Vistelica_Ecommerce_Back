@@ -27,10 +27,10 @@ export class User {
     banned: boolean;
 
     @Column({ nullable: true, type: "timestamp" })
-    banned_at: Date;
+    banned_at: Date | null;
 
     @Column({ nullable: true, type: "text" })
-    ban_reason: string;
+    ban_reason: string | null;
 
     @OneToOne(() => Profile, (profile) => profile.user)
     profile: Profile;

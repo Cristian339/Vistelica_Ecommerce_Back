@@ -1,5 +1,5 @@
 import { EntityRepository, Repository } from "typeorm";
-import { User } from "../entities/User";
+import { User } from "../Entities/User";
 
 @EntityRepository(User)
 export class UserRepository extends Repository<User> {
@@ -23,12 +23,5 @@ export class UserRepository extends Repository<User> {
     }
 
     //  Banear a un usuario
-    async banUser(userId: number, reason: string): Promise<void> {
-        await this.update(userId, { banned: true, banned_at: new Date(), ban_reason: reason });
-    }
 
-    //  Desbanear a un usuario
-    async unbanUser(userId: number): Promise<void> {
-        await this.update(userId, { banned: false, banned_at: null, ban_reason: null });
-    }
 }
