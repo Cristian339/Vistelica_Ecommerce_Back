@@ -5,7 +5,8 @@ import ProductRoutes from './Routes/ProductRoutes';
 import AuthRoutes from './Routes/AuthRoutes';
 import ReviewRoutes from "./Routes/ReviewRoutes";
 import ProfileRoutes from "./Routes/ProfileRoutes";
-import OrderRoutes from "./Routes/OrderRoutes"; // Add this import
+import OrderRoutes from "./Routes/OrderRoutes";
+import WhishlistRoutes from "./Routes/WishlistRoutes";
 
 dotenv.config();
 const app = express();
@@ -19,7 +20,7 @@ app.use('/api', AuthRoutes);
 app.use('/api', ReviewRoutes);
 app.use('/api', ProfileRoutes);
 app.use('/api', OrderRoutes);
-
+app.use('/api', WhishlistRoutes);
 const start = async () => {
     try {
         // Conectar a la base de datos con TypeORM

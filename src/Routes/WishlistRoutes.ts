@@ -5,7 +5,7 @@ import { Auth } from "../Middleware/Auth";
 const router = Router();
 const wishlistController = new WishlistController();
 const auth = new Auth();
-router.post("/add", (req: Request, res: Response, next: NextFunction) => {
+router.post("/wishlist/add", (req: Request, res: Response, next: NextFunction) => {
     auth.authenticate(req, res, next);
 }, async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -15,7 +15,7 @@ router.post("/add", (req: Request, res: Response, next: NextFunction) => {
     }
 });
 
-router.delete("/remove", (req: Request, res: Response, next: NextFunction) => {
+router.delete("/wishlist/remove", (req: Request, res: Response, next: NextFunction) => {
     auth.authenticate(req, res, next);
 }, async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -25,7 +25,7 @@ router.delete("/remove", (req: Request, res: Response, next: NextFunction) => {
     }
 });
 
-router.get("/user/:userId", (req: Request, res: Response, next: NextFunction) => {
+router.get("/wishlist/user/:userId", (req: Request, res: Response, next: NextFunction) => {
     auth.authenticate(req, res, next);
 }, async (req: Request, res: Response, next: NextFunction) => {
     try {

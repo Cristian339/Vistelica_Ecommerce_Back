@@ -1,6 +1,7 @@
 import {Entity, PrimaryGeneratedColumn, Column, OneToOne, OneToMany} from "typeorm";
 import {Review} from "./Review";
 import {Profile} from "./Profile";
+import {Wishlist} from "./Wishlist";
 
 export enum Role {
     ADMIN = 0,
@@ -37,7 +38,11 @@ export class User {
     @OneToMany(() => Review, (review) => review.user)
     reviews: Review[];
 
-    constructor(user_id: number, email: string, password: string, role: Role, banned: boolean, banned_at: Date, ban_reason: string, profile: Profile, reviews: Review[]) {
+    @OneToMany(() => Wishlist, (wishlist) => wishlist.user)
+    wishlists: Wishlist[];
+
+
+    constructor(user_id: number, email: string, password: string, role: Role, banned: boolean, banned_at: Date, ban_reason: string, profile: Profile, reviews: Review[], wishlists: Wishlist[]) {
         this.user_id = user_id;
         this.email = email;
         this.password = password;
@@ -47,5 +52,6 @@ export class User {
         this.ban_reason = ban_reason;
         this.profile = profile;
         this.reviews = reviews;
+        this.wishlists = wishlists;
     }
 }

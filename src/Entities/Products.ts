@@ -10,6 +10,8 @@ import {
 import { Subcategory } from "./Subcategory";
 import { Category } from "./Category";
 import {Review} from "./Review";
+import {Wishlist} from "./Wishlist";
+
 
 export enum Size {
     XS = "XS",
@@ -58,8 +60,11 @@ export class Products {
 
     @UpdateDateColumn()
     updated_at: Date;
+    @OneToMany(() => Wishlist, (wishlist) => wishlist.product)
+    wishlists: Wishlist[];
 
-    constructor(product_id: number, name: string, description: string, price: number, stock_quantity: number, category: Category, subcategory: Subcategory, reviews: Review[], image_url: string, size: Size, created_at: Date, updated_at: Date) {
+
+    constructor(product_id: number, name: string, description: string, price: number, stock_quantity: number, category: Category, subcategory: Subcategory, reviews: Review[], image_url: string, size: Size, created_at: Date, updated_at: Date, wishlists: Wishlist[]) {
         this.product_id = product_id;
         this.name = name;
         this.description = description;
@@ -72,5 +77,6 @@ export class Products {
         this.size = size;
         this.created_at = created_at;
         this.updated_at = updated_at;
+        this.wishlists = wishlists;
     }
 }
