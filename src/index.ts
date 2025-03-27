@@ -11,15 +11,14 @@ import AdminRoutes from "./Routes/AdminRoutes";
 import "reflect-metadata";
 import cors from 'cors';
 
+import OrderRoutes from "./Routes/OrderRoutes";
+import WhishlistRoutes from "./Routes/WishlistRoutes";
 
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middlewares esenciales
-app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 // Usa las rutas
 app.use('/api', ProductRoutes);
@@ -29,6 +28,7 @@ app.use('/api', ProfileRoutes);
 app.use('/api', OrderRoutes);
 app.use('/api', CartRoutes);
 app.use('/api', AdminRoutes);
+app.use('/api', WhishlistRoutes);
 
 const start = async () => {
     try {
