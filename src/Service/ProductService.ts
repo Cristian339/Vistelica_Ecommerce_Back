@@ -9,7 +9,7 @@ export class ProductService {
     private productRepository = AppDataSource.getRepository(Products); // Repositorio de Products
     private categoryRepository = AppDataSource.getRepository(Category);
     private subcategoryRepository = AppDataSource.getRepository(Subcategory);
-    // Crear un nuevo producto
+
 
     // Crear un nuevo producto
     async createProduct(data: Partial<Products>): Promise<Products> {

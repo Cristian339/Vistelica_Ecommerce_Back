@@ -1,21 +1,30 @@
-import { EntityRepository, Repository } from "typeorm";
+import { Repository } from "typeorm";
+import { AppDataSource } from "../Config/database";
 import { Review } from "../Entities/Review";
 
-@EntityRepository(Review)
-export class ProductReviewRepository extends Repository<Review> {
-    async findAllWithUsersAndProducts() {
-        return this.find({ relations: ["user", "product"] });
+export class ProductReviewRepository {
+    private repo: Repository<Review>;
+
+    constructor() {
+        this.repo = AppDataSource.getRepository(Review);
     }
 
-    async findByProduct(productId: number) {
-        return this.find({
+    // Listar todas las reseñas con usuarios y productos
+    async findAllWithUsersAndProducts(): Promise<Review[]> {
+        return this.repo.find({ relations: ["user", "product"] });
+    }
+
+    // Buscar reseñas por ID de producto
+    async findByProduct(productId: number): Promise<Review[]> {
+        return this.repo.find({
             where: { product: { product_id: productId } },
             relations: ["user", "product"],
         });
     }
 
-    async findByUser(userId: number) {
-        return this.find({
+    // Buscar reseñas por ID de usuario
+    async findByUser(userId: number): Promise<Review[]> {
+        return this.repo.find({
             where: { user: { user_id: userId } },
             relations: ["user", "product"],
         });

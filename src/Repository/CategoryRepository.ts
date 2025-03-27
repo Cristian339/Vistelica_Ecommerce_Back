@@ -1,9 +1,16 @@
-import { EntityRepository, Repository } from "typeorm";
+import { Repository } from "typeorm";
+import { AppDataSource } from "../Config/database";
 import { Category } from "../Entities/Category";
 
-@EntityRepository(Category)
-export class CategoryRepository extends Repository<Category> {
-    async findAllWithSubcategories() {
-        return this.find({ relations: ["subcategories"] });
+export class CategoryRepository {
+    private repo: Repository<Category>;
+
+    constructor() {
+        this.repo = AppDataSource.getRepository(Category);
+    }
+
+    // Listar todas las categorías con sus subcategorías
+    async findAllWithSubcategories(): Promise<Category[]> {
+        return this.repo.find({ relations: ["subcategories"] });
     }
 }
