@@ -32,4 +32,8 @@ export class WishlistRepository {
     async getWishlistByUser(userId: number): Promise<Wishlist[]> {
         return await this.repo.find({ where: { user: { user_id: userId } }, relations: ["product"] });
     }
+    async findWishlistItem(userId: number, productId: number): Promise<Wishlist | null> {
+        return await this.repo.findOne({ where: { user: { user_id: userId }, product: { product_id: productId } } });
+    }
+
 }

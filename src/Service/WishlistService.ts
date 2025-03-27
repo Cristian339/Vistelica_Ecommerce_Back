@@ -14,4 +14,8 @@ export class WishlistService {
     async getUserWishlist(userId: number) {
         return await this.wishlistRepo.getWishlistByUser(userId);
     }
+    async findWishlistItem(userId: number, productId: number) {
+        return await this.wishlistRepo.findWishlistItem(userId, productId);
+    }
+
 }
