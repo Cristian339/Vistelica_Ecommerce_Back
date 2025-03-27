@@ -7,7 +7,7 @@ const adminController = new AdminController();
 const auth = new Auth();
 
 // Usuarios baneados
-router.get('/banned', (req: Request, res: Response, next: NextFunction) => {
+router.get('/admin/banned', (req: Request, res: Response, next: NextFunction) => {
     auth.authenticate(req, res, next);
 }, async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -18,7 +18,7 @@ router.get('/banned', (req: Request, res: Response, next: NextFunction) => {
 });
 
 // Usuarios no baneados
-router.get('/unbanned', (req: Request, res: Response, next: NextFunction) => {
+router.get('/admin/unbanned', (req: Request, res: Response, next: NextFunction) => {
     auth.authenticate(req, res, next);
 }, async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -29,7 +29,7 @@ router.get('/unbanned', (req: Request, res: Response, next: NextFunction) => {
 });
 
 // Banear usuario
-router.post('/ban/:userId', (req: Request, res: Response, next: NextFunction) => {
+router.post('/admin/ban/:userId', (req: Request, res: Response, next: NextFunction) => {
     auth.authenticate(req, res, next);
 }, async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -40,7 +40,7 @@ router.post('/ban/:userId', (req: Request, res: Response, next: NextFunction) =>
 });
 
 // Desbanear usuario
-router.post('/unban/:userId', (req: Request, res: Response, next: NextFunction) => {
+router.post('/admin/unban/:userId', (req: Request, res: Response, next: NextFunction) => {
     auth.authenticate(req, res, next);
 }, async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -51,7 +51,7 @@ router.post('/unban/:userId', (req: Request, res: Response, next: NextFunction) 
 });
 
 // Listar clientes
-router.get('/clients', (req: Request, res: Response, next: NextFunction) => {
+router.get('/admin/clients', (req: Request, res: Response, next: NextFunction) => {
     auth.authenticate(req, res, next);
 }, async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -62,7 +62,7 @@ router.get('/clients', (req: Request, res: Response, next: NextFunction) => {
 });
 
 // Listar vendedores
-router.get('/sellers', (req: Request, res: Response, next: NextFunction) => {
+router.get('/admin/sellers', (req: Request, res: Response, next: NextFunction) => {
     auth.authenticate(req, res, next);
 }, async (req: Request, res: Response, next: NextFunction) => {
     try {
