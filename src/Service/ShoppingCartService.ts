@@ -6,31 +6,38 @@ export class ShoppingCartService {
     private orderRepository = AppDataSource.getRepository(Order);
     private userRepository = AppDataSource.getRepository(User);
 
-    async createOrder(userId?: number, sessionId?: string): Promise<Order> {
+    async createOrder(userId?: number, sessionId?: string): Promise<Order | null> {
         try {
             let user: User | null = null;
 
             if (userId) {
                 user = await this.userRepository.findOneBy({ user_id: userId });
+
                 if (!user) {
-                    throw new Error('Usuario no encontrado');
+                    throw new Error("Usuario no encontrado.");
                 }
             }
 
+            // Validar que al menos uno de los dos valores esté presente
+            if (!user && !sessionId) {
+                throw new Error("Debe proporcionarse un userId o un sessionId para crear una orden.");
+            }
+
             const order = this.orderRepository.create({
-                // @ts-ignore
-                user,
+                user: user || undefined, // Si no hay usuario, será null
                 status: "en carro",
-                session_id: sessionId
+                session_id: sessionId || undefined, // Si no hay sessionId, será null
             });
 
-            // @ts-ignore
             return await this.orderRepository.save(order);
+
         } catch (error) {
-            console.error('Error al crear el pedido:', error);
-            throw new Error('Error al crear el pedido');
+            console.error("Error al crear el pedido:", error);
+            throw new Error("Error al crear el pedido");
         }
     }
+
+
 
     async getOrderByUserId(userId: number): Promise<Order | null> {
         try {

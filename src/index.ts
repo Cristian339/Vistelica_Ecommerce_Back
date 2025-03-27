@@ -17,9 +17,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middlewares esenciales
-app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 // Usa las rutas
 app.use('/api', ProductRoutes);

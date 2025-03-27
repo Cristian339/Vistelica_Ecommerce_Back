@@ -16,7 +16,7 @@ export class ShoppingCartDetailController {
         const { userId, sessionId } = req.body;
 
         try {
-            let order: Order;
+            let order: Order | null;
 
             if (userId) {
                 // Usuario autenticado
