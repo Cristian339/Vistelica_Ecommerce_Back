@@ -54,13 +54,14 @@ router.delete('/products/:id', async (req: Request, res: Response, next: NextFun
         next(error);
     }
 });
-router.get('/products/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/products/:productId', async (req: Request, res: Response, next: NextFunction) => {
     try {
         await productController.getById(req, res);
     } catch (error) {
         next(error);
     }
 });
+
 
 router.put('/products/:id', async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -76,5 +77,13 @@ router.get('/products/category/:categoryId/subcategory/:subcategoryId', async (r
         next(error);
     }
 });
+router.get("/product/:productId/price", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await productController.getProductPriceWithDiscount(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+
 
 export default router;

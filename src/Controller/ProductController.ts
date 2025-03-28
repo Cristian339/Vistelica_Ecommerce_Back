@@ -26,7 +26,7 @@ export class ProductController {
 
             console.log('Datos recibidos:', productData);
 
-            const { name, description, price, stock_quantity, category_id, subcategory_id, size } = productData;
+            const { name, description, price, stock_quantity, category_id, subcategory_id, size, discount_percentage } = productData;
 
             let imageUrl: string | undefined = undefined;
 
@@ -43,6 +43,7 @@ export class ProductController {
                 category_id,
                 subcategory_id,
                 size,
+                discount_percentage,
                 image_url: imageUrl
             };
 
@@ -70,14 +71,41 @@ export class ProductController {
         }
     }
 
+
     async getById(req: Request, res: Response): Promise<Response> {
         try {
-            const product = await this.productService.getProductById(Number(req.params.id));
-            return res.status(200).json(product);
+            const { productId } = req.params; // Asegúrate de que el nombre coincide con la ruta
+            const product = await this.productService.getProductById(Number(productId));
+
+            if (!product) {
+                return res.status(404).json({ message: "Producto no encontrado" });
+            }
+
+            return res.status(200).json({
+                product_id: product.product_id,
+                name: product.name,
+                description: product.description,
+                price: product.price,
+                discount_percentage: product.discount_percentage,
+                stock_quantity: product.stock_quantity,
+                size: product.size,
+                image_url: product.image_url,
+                category: product.category,
+                subcategory: product.subcategory,
+                reviews: product.reviews,
+                created_at: product.created_at,
+                updated_at: product.updated_at
+            });
         } catch (error) {
-            return res.status(500).json({message: 'Error fetching product', error});
+            console.error("Error al obtener el producto:", error);
+            return res.status(500).json({
+                message: "Error al obtener el producto",
+                error: (error as Error).message
+            });
         }
     }
+
+
 
     async update(req: Request, res: Response): Promise<Response> {
         try {
@@ -107,4 +135,33 @@ export class ProductController {
             return res.status(500).json({message: 'Error deleting product', error});
         }
     }
+    // Método para obtener el precio, descuento y precio con descuento
+    async getProductPriceWithDiscount(req: Request, res: Response): Promise<Response> {
+        try {
+            const { productId } = req.params;  // Obtener el ID del producto desde los parámetros de la URL
+
+            // Obtener el producto por ID
+            const product = await this.productService.getProductById(Number(productId));
+
+            if (!product) {
+                return res.status(404).json({ error: 'Producto no encontrado' });
+            }
+
+            // Calcular el precio con descuento
+            const { price, discount_percentage } = product;
+            const discountedPrice = await this.productService.calculateDiscountedPrice(price, discount_percentage);
+            const formattedDiscountedPrice = discountedPrice.toFixed(2);
+            return res.status(200).json({
+                productId: product.product_id,
+                name: product.name,
+                originalPrice: price,
+                discountPercentage: discount_percentage,
+                discounted_price: formattedDiscountedPrice,
+            });
+        } catch (error) {
+            return res.status(500).json({ msg: 'Error obteniendo el precio con descuento', error: (error as Error).message });
+        }
+    }
+
+
 }

@@ -31,10 +31,10 @@ export class ProductService {
 
             // Crear el producto utilizando solo los IDs de las relaciones
             const product = this.productRepository.create({
-                ...data, // Esto tomará directamente category_id y subcategory_id
-                category: category, // Relacionar la categoría
-                subcategory: subcategory, // Relacionar la subcategoría
-                image_url: data.image_url || undefined // Evitar valores `null`
+                ...data, // Tomará directamente los valores de category_id y subcategory_id
+                category: category,
+                subcategory: subcategory,
+                discount_percentage: data.discount_percentage ?? undefined,  // Asegurarse de que el descuento sea nulo si no se pasa
             });
 
             // Guarda el producto en la base de datos
@@ -47,6 +47,7 @@ export class ProductService {
             throw new Error("Error creating product");
         }
     }
+
 
 
 
@@ -184,4 +185,14 @@ export class ProductService {
             throw new Error('Error deleting product');
         }
     }
+    // Método para calcular el precio con descuento
+    async calculateDiscountedPrice(price: number, discountPercentage: number | null): Promise<number> {
+        if (discountPercentage !== null) {
+            const discount = discountPercentage / 100;
+            return price * (1 - discount);
+        }
+        return price;
+    }
+
+
 }
