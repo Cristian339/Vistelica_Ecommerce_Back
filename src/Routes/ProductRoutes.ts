@@ -1,11 +1,38 @@
-import express, {Router, Request, Response, NextFunction} from 'express';
+import express, { Router, Request, Response, NextFunction } from 'express';
+import multer from 'multer';
+import path from 'path';
 import { ProductController } from '../Controller/ProductController';
 
 const router = express.Router();
 const productController = new ProductController();
 
+// Configuración de Multer para la subida de archivos
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/'); // Carpeta interna donde se guardan las imágenes
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`); // Renombrar archivo con timestamp
+    },
+});
+// Filtro para aceptar solo imágenes
+const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+    // Verificamos si el archivo es una imagen (usando la propiedad mimetype)
+    const imageMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/avif', 'image/gif', 'image/tiff', 'image/bmp', 'image/svg+xml'];
+
+    if (imageMimeTypes.includes(file.mimetype)) {
+        return cb(null, true);
+    }
+
+    cb(new Error('Solo se permiten imágenes en formato válido (jpeg, jpg, png, webp, avif, gif, tiff, bmp, svg).'));
+};
+
+// Inicializar Multer
+const upload = multer({ storage, fileFilter });
+
+// Ruta para obtener todos los productos
 router.get('/products', async (req: Request, res: Response, next: NextFunction) => {
-    console.log('GET /rutas');
+    console.log('GET /products');
     try {
         await productController.getAll(req, res);
     } catch (error) {
@@ -13,15 +40,19 @@ router.get('/products', async (req: Request, res: Response, next: NextFunction) 
     }
 });
 
-// Ruta para crear un nuevo producto
-router.post('/products', async (req: Request, res: Response, next: NextFunction) => {
-    console.log('POST /products');
-    try {
-        await productController.create(req, res);  // Llama a la función de crear producto en el controlador
-    } catch (error) {
-        next(error);
+// Ruta para crear un nuevo producto con imagen
+router.post('/products', upload.single('image'), (req: Request, res: Response) => {
+    if (req.file) {
+        // Obtener la ruta completa del archivo cargado
+        const filePath = path.join(__dirname, '..', 'uploads', req.file.filename);
+
+
+        res.status(200).json({ message: 'Imagen subida exitosamente', filePath });
+    } else {
+        res.status(400).json({ error: 'No se subió ningún archivo válido.' });
     }
 });
+
 
 router.delete('/products/:id', async (req: Request, res: Response, next: NextFunction) => {
     try {

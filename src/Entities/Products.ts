@@ -51,7 +51,7 @@ export class Products {
     reviews: Review[];
 
     @Column({ nullable: true })
-    image_url: string;
+    image_url?: string;
 
     @Column({ type: "enum", enum: Size, nullable: true })
     size: Size;

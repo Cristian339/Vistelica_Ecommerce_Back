@@ -15,6 +15,7 @@
   "dependencies": {
     "@nestjs/common": "^11.0.12",
     "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.6.0",
     "cors": "^2.8.5",
     "date-fns": "^4.1.0",
     "dotenv": "^16.4.7",
@@ -22,6 +23,7 @@
     "express-async-handler": "^1.2.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.2",
     "pg": "^8.14.1",
     "reflect-metadata": "^0.2.2",
     "sequelize": "^6.37.6",
@@ -34,6 +36,7 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.1",
     "@types/jsonwebtoken": "^9.0.9",
+    "@types/multer": "^1.4.12",
     "@types/node": "^22.13.10",
     "@types/sequelize": "^4.28.20",
     "@types/uuid": "^10.0.0",

@@ -1,5 +1,6 @@
 import {Request, Response} from 'express';
 import {ProductService} from '../Service/ProductService';
+import {uploadImage} from "../Config/Cloudinary";
 
 export class ProductController {
     private productService = new ProductService();
@@ -15,12 +16,34 @@ export class ProductController {
 
     async create(req: Request, res: Response): Promise<Response> {
         try {
-            const product = await this.productService.createProduct(req.body);
-            return res.status(201).json(product);
+            const { name, description, price, stock_quantity, category_id, subcategory_id, size } = req.body;
+
+            let imageUrl: string | undefined = undefined;
+
+            // Verificar si hay un archivo de imagen en la petición
+            if (req.file) {
+                imageUrl = await uploadImage('productos', req.file.path);
+            }
+
+            const productData = {
+                name,
+                description,
+                price,
+                stock_quantity,
+                category_id,   // Usar los IDs de categoría y subcategoría
+                subcategory_id,
+                size,
+                image_url: imageUrl
+            };
+
+            const product = await this.productService.createProduct(productData);
+            const productWithDetails = await this.productService.getProductById(product.product_id);
+            return res.status(201).json(productWithDetails);
         } catch (error) {
-            return res.status(500).json({msg: 'Error creating product', error});
+            return res.status(500).json({ msg: 'Error creating product', error: (error as Error).message });
         }
     }
+
 
     async getAll(req: Request, res: Response): Promise<Response> {
         console.log('controllador');

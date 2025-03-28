@@ -2,6 +2,7 @@ import { AppDataSource } from '../Config/database'; // Asegúrate de importar la
 import { Products } from '../Entities/Products';
 import { Category } from "../Entities/Category";
 import { Subcategory } from "../Entities/Subcategory";
+import { uploadImage } from '../Config/Cloudinary';
 
 
 export class ProductService {
@@ -16,9 +17,10 @@ export class ProductService {
         try {
             console.log('Datos recibidos:', data);
 
-            // Buscar categoría y subcategoría por sus IDs
-            const category = await this.categoryRepository.findOne({where: {category_id: data.category?.category_id}});
-            const subcategory = await this.subcategoryRepository.findOne({where: {subcategory_id: data.subcategory?.subcategory_id}});
+            // Verifica si la categoría y subcategoría existen por su ID
+            const category = await this.categoryRepository.findOne({ where: { category_id: data.category?.category_id } });
+            const subcategory = await this.subcategoryRepository.findOne({ where: { subcategory_id: data.subcategory?.subcategory_id } });
+
             console.log('Categoría encontrada:', category);
             console.log('Subcategoría encontrada:', subcategory);
 
@@ -27,11 +29,12 @@ export class ProductService {
                 throw new Error("Category or Subcategory not found");
             }
 
-            // Crea un nuevo objeto de producto con las entidades relacionadas
+            // Crear el producto utilizando solo los IDs de las relaciones
             const product = this.productRepository.create({
-                ...data,
-                category: category,
-                subcategory: subcategory
+                ...data, // Esto tomará directamente category_id y subcategory_id
+                category: category, // Relacionar la categoría
+                subcategory: subcategory, // Relacionar la subcategoría
+                image_url: data.image_url || undefined // Evitar valores `null`
             });
 
             // Guarda el producto en la base de datos
@@ -44,6 +47,10 @@ export class ProductService {
             throw new Error("Error creating product");
         }
     }
+
+
+
+
 
     // Obtener todos los productos
     async getAllProducts(): Promise<Products[]> {
