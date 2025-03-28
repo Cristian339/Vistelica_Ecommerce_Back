@@ -86,9 +86,53 @@ export class UserController {
         }
     }
 
-    
+    async requestPasswordReset(req: Request, res: Response) {
+        try {
+            const {email} = req.body;
 
-/*    async protected(req: Request, res: Response): Promise<Response> {
-        return res.status(200).json({message: "Ruta protegida"});
-    }*/
+            if (!email) {
+                return res.status(400).json({error: 'Email requerido'});
+            }
+
+
+            const userRepository = AppDataSource.getRepository(User);
+            const user = await userRepository.findOne({
+                where: {email: email}
+            });
+
+            if (!user) {
+                return res.status(404).json({error: 'No existe una cuenta con este correo electrónico'});
+            }
+
+            const userService = new UserService();
+            const token = await userService.requestPasswordReset(email);
+
+            res.status(200).json({
+                message: 'Código de verificación enviado al correo',
+                token
+            });
+        } catch (error: any) {
+            console.error('Error in requestPasswordReset:', error);
+            res.status(400).json({error: error.message});
+        }
+    }
+
+    async resetPassword(req: Request, res: Response) {
+        try {
+            const {token, code, newPassword} = req.body;
+
+            if (!token || !code || !newPassword) {
+                return res.status(400).json({error: 'Token, código y nueva contraseña requeridos'});
+            }
+
+            const userService = new UserService();
+            await userService.resetPassword(token, code, newPassword);
+
+            res.status(200).json({message: 'Contraseña actualizada correctamente'});
+        } catch (error: any) {
+            res.status(400).json({error: error.message});
+        }
+    }
+
+
 }

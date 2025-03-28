@@ -25,4 +25,26 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
 });
 
 
+router.post('/reset-password-request', async (req: Request, res: Response, next: NextFunction) => {
+    console.log('POST /reset-password-request')
+    try {
+        await userController.requestPasswordReset(req, res);
+    } catch(error) {
+        next(error);
+    }
+});
+
+router.post('/reset-password', async (req: Request, res: Response, next: NextFunction) => {
+    console.log('POST /reset-password')
+    try {
+        await userController.resetPassword(req, res);
+    } catch(error) {
+        next(error);
+    }
+});
+
+
+
+
+
 export default router;
