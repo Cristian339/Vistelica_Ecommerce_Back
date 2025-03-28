@@ -41,17 +41,10 @@ router.get('/products', async (req: Request, res: Response, next: NextFunction) 
 });
 
 // Ruta para crear un nuevo producto con imagen
-router.post('/products', upload.single('image'), (req: Request, res: Response) => {
-    if (req.file) {
-        // Obtener la ruta completa del archivo cargado
-        const filePath = path.join(__dirname, '..', 'uploads', req.file.filename);
-
-
-        res.status(200).json({ message: 'Imagen subida exitosamente', filePath });
-    } else {
-        res.status(400).json({ error: 'No se subió ningún archivo válido.' });
-    }
+router.post('/products', upload.single('image'), (req, res) => {
+    productController.create(req, res);  // Llamada al controlador para crear el producto
 });
+
 
 
 router.delete('/products/:id', async (req: Request, res: Response, next: NextFunction) => {

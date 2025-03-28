@@ -16,7 +16,17 @@ export class ProductController {
 
     async create(req: Request, res: Response): Promise<Response> {
         try {
-            const { name, description, price, stock_quantity, category_id, subcategory_id, size } = req.body;
+            // Verifica si los datos vienen como un string dentro de `data`
+            let productData: any = req.body.data ? JSON.parse(req.body.data) : req.body;
+
+            // Verifica si los datos son válidos
+            if (!productData.name || !productData.description || !productData.price || !productData.stock_quantity || !productData.category_id || !productData.subcategory_id || !productData.size) {
+                return res.status(400).json({ error: 'Faltan algunos campos obligatorios' });
+            }
+
+            console.log('Datos recibidos:', productData);
+
+            const { name, description, price, stock_quantity, category_id, subcategory_id, size } = productData;
 
             let imageUrl: string | undefined = undefined;
 
@@ -25,22 +35,27 @@ export class ProductController {
                 imageUrl = await uploadImage('productos', req.file.path);
             }
 
-            const productData = {
+            const productDataFinal = {
                 name,
                 description,
                 price,
                 stock_quantity,
-                category_id,   // Usar los IDs de categoría y subcategoría
+                category_id,
                 subcategory_id,
                 size,
                 image_url: imageUrl
             };
 
-            const product = await this.productService.createProduct(productData);
+            // Crear el producto en la base de datos
+            const product = await this.productService.createProduct(productDataFinal);
             const productWithDetails = await this.productService.getProductById(product.product_id);
+
+            // Devolver el producto completo con todos los detalles
             return res.status(201).json(productWithDetails);
+
         } catch (error) {
-            return res.status(500).json({ msg: 'Error creating product', error: (error as Error).message });
+            console.error('Error al crear el producto:', error);
+            return res.status(500).json({ msg: 'Error creando el producto', error: (error as Error).message });
         }
     }
 
