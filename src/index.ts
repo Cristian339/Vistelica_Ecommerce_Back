@@ -9,6 +9,7 @@ import OrderRoutes from "./Routes/OrderRoutes";
 import CartRoutes from "./Routes/CartRoutes";
 import AdminRoutes from "./Routes/AdminRoutes";
 import WhishlistRoutes from "./Routes/WishlistRoutes";
+import NotificationRoutes from "./Routes/NotificationRoutes";
 import "reflect-metadata";
 import cors from 'cors';
 
@@ -29,6 +30,8 @@ app.use('/api', OrderRoutes);
 app.use('/api', CartRoutes);
 app.use('/api', AdminRoutes);
 app.use('/api', WhishlistRoutes);
+app.use('/api', NotificationRoutes);
+
 
 const start = async () => {
     try {

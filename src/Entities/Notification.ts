@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, JoinColumn } from "typeorm";
 import { User } from "./User";
 
 @Entity({ schema: 'vistelica' })
@@ -6,7 +6,8 @@ export class Notification {
     @PrimaryGeneratedColumn()
     notification_id!: number;
 
-    @ManyToOne(() => User, user => user.user_id, { onDelete: 'CASCADE' })
+    @ManyToOne(() => User, user => user.notifications, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'user_id' }) // Esto es crucial
     user!: User;
 
     @Column({ type: 'text' })

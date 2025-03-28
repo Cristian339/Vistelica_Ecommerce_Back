@@ -4,18 +4,22 @@ import { Repository } from "typeorm";
 import { AppDataSource } from "../Config/database";
 import { Products } from "../Entities/Products";
 import {User} from "../Entities/User";
+import {Notification} from "../Entities/Notification";
+import {NotificationService} from "./NotificationService";
 
 export class OrderService {
     private orderRepository: Repository<Order>;
     private orderDetailRepository: Repository<OrderDetail>;
     private productRepository: Repository<Products>;
     private userRepository: Repository<User>;
+    private notificationService: NotificationService;
 
     constructor() {
         this.orderRepository = AppDataSource.getRepository(Order);
         this.orderDetailRepository = AppDataSource.getRepository(OrderDetail);
         this.productRepository = AppDataSource.getRepository(Products);
         this.userRepository = AppDataSource.getRepository(User);
+        this.notificationService = new NotificationService();
     }
 
     // Crear un nuevo pedido
@@ -49,6 +53,10 @@ export class OrderService {
             // Guardar el detalle del pedido
             await this.orderDetailRepository.save(orderDetail);
         }
+
+        // Crear notificación
+        await this.notificationService.notifyNewOrder(user, newOrder.order_id);
+
 
         // Devolver el pedido con los detalles
         return newOrder;

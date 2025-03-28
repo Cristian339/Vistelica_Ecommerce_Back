@@ -1,15 +1,17 @@
-
-import express, { Request, Response, NextFunction} from 'express';
+import express, { Router, Request, Response, NextFunction } from 'express';
 import { ShoppingCartController } from '../Controller/ShoppingCartController';
 import { ShoppingCartDetailController } from '../Controller/ShoppingCartDetailController';
+import { Auth } from '../Middleware/Auth';
 
-const router = express.Router();
+const router: Router = express.Router();
 const shoppingCartDetailController = new ShoppingCartDetailController();
 const shoppingCartController = new ShoppingCartController();
+const auth = new Auth();
 
 // Rutas principales del carrito
-router.post('/cart/', async (req: Request, res: Response, next: NextFunction) => {
-
+router.post('/cart/', (req: Request, res: Response, next: NextFunction) => {
+    auth.authenticate(req, res, next);
+}, async (req: Request, res: Response, next: NextFunction) => {
     try {
         await shoppingCartDetailController.createOrder(req, res);
     } catch (error) {
@@ -17,7 +19,9 @@ router.post('/cart/', async (req: Request, res: Response, next: NextFunction) =>
     }
 });
 
-router.get('/cart/', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/cart/', (req: Request, res: Response, next: NextFunction) => {
+    auth.authenticate(req, res, next);
+}, async (req: Request, res: Response, next: NextFunction) => {
     try {
         await shoppingCartDetailController.getCurrentOrder(req, res);
     } catch (error) {
@@ -25,7 +29,9 @@ router.get('/cart/', async (req: Request, res: Response, next: NextFunction) => 
     }
 });
 
-router.post('/cart/associate', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/cart/associate', (req: Request, res: Response, next: NextFunction) => {
+    auth.authenticate(req, res, next);
+}, async (req: Request, res: Response, next: NextFunction) => {
     try {
         await shoppingCartDetailController.associateOrderToUser(req, res);
     } catch (error) {
@@ -34,7 +40,9 @@ router.post('/cart/associate', async (req: Request, res: Response, next: NextFun
 });
 
 // Rutas para items del carrito
-router.post('/cart/items', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/cart/items', (req: Request, res: Response, next: NextFunction) => {
+    auth.authenticate(req, res, next);
+}, async (req: Request, res: Response, next: NextFunction) => {
     try {
         await shoppingCartController.addProductToOrder(req, res);
     } catch (error) {
@@ -42,8 +50,9 @@ router.post('/cart/items', async (req: Request, res: Response, next: NextFunctio
     }
 });
 
-// En CartRoutes.ts
-router.get('/cart/items/:orderId', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/cart/items/:orderId', (req: Request, res: Response, next: NextFunction) => {
+    auth.authenticate(req, res, next);
+}, async (req: Request, res: Response, next: NextFunction) => {
     try {
         await shoppingCartController.getOrderDetails(req, res);
     } catch (error) {
@@ -51,7 +60,9 @@ router.get('/cart/items/:orderId', async (req: Request, res: Response, next: Nex
     }
 });
 
-router.put('/cart/items/:itemId/quantity', async (req: Request, res: Response, next: NextFunction) => {
+router.put('/cart/items/:itemId/quantity', (req: Request, res: Response, next: NextFunction) => {
+    auth.authenticate(req, res, next);
+}, async (req: Request, res: Response, next: NextFunction) => {
     try {
         await shoppingCartController.updateOrderDetailQuantity(req, res);
     } catch (error) {
@@ -59,7 +70,9 @@ router.put('/cart/items/:itemId/quantity', async (req: Request, res: Response, n
     }
 });
 
-router.delete('/cart/items/:itemId', async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/cart/items/:itemId', (req: Request, res: Response, next: NextFunction) => {
+    auth.authenticate(req, res, next);
+}, async (req: Request, res: Response, next: NextFunction) => {
     try {
         await shoppingCartController.removeProductFromOrder(req, res);
     } catch (error) {
@@ -68,7 +81,9 @@ router.delete('/cart/items/:itemId', async (req: Request, res: Response, next: N
 });
 
 // Ruta para obtener el total del carrito
-router.get('/cart/total', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/cart/total', (req: Request, res: Response, next: NextFunction) => {
+    auth.authenticate(req, res, next);
+}, async (req: Request, res: Response, next: NextFunction) => {
     try {
         await shoppingCartController.getCartTotal(req, res);
     } catch (error) {
