@@ -49,5 +49,8 @@ export class ProfileController {
             }
             return res.status(500).json({ message: "Error al actualizar contraseña" });
         }
+
     }
+
+
 }

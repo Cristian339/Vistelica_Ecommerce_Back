@@ -30,7 +30,6 @@ export class JWTService {
 
     async extractPerfilToken(token: string, userService: any): Promise<Profile> {
         try {
-            // Asegurar que AppDataSource esté inicializado
             if (!AppDataSource.isInitialized) {
                 console.log("Inicializando AppDataSource...");
                 await AppDataSource.initialize();
@@ -52,10 +51,8 @@ export class JWTService {
             console.log("Usuario encontrado:", user);
             console.log("Buscando perfil para user_id:", user.user_id);
 
-            // Obtener el repositorio después de inicializar
             const profileRepository = AppDataSource.getRepository(Profile);
 
-            // Consulta más simple y directa para depurar
             console.log("Ejecutando consulta con ID:", user.user_id);
             const profile = await profileRepository.findOne({
                 where: { user: { user_id: user.user_id } },
@@ -74,5 +71,9 @@ export class JWTService {
             const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
             throw new Error('Error al extraer datos del token: ' + errorMessage);
         }
+    }
+
+    generateResetToken(payload: any): string {
+        return jwt.sign(payload, this.SECRET_KEY, {expiresIn: '1h'});
     }
 }
