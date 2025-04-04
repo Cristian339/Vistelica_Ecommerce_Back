@@ -18,7 +18,14 @@ import CategoryRoutes from "./Routes/CategoryRoutes";
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
-app.use(cors());
+
+// CORS middleware - agrega cabeceras y métodos permitidos
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 // Middlewares esenciales
 app.use(express.json());
 

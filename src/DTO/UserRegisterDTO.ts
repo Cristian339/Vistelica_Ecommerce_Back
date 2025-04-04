@@ -38,6 +38,15 @@ export class UserRegisterDTO {
         if (!this.password || this.password.length < 6)
             errors.push("La contraseña debe tener al menos 6 caracteres");
 
+        // Validación simple para teléfonos internacionales
+        if (this.phone) {
+            // Elimina todo excepto dígitos y verifica longitud
+            const digitsOnly = this.phone.replace(/\D/g, '');
+            if (digitsOnly.length < 6 || digitsOnly.length > 15) {
+                errors.push('El número de teléfono debe tener entre 6 y 15 dígitos');
+            }
+        }
+
         return errors;
     }
 
