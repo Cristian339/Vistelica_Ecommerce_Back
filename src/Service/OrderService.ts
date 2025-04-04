@@ -4,18 +4,21 @@ import { Repository } from "typeorm";
 import { AppDataSource } from "../Config/database";
 import { Products } from "../Entities/Products";
 import {User} from "../Entities/User";
+import {PaymentService} from "./PaymentService";
+import {Payment} from "../Entities/Payment";
 
 export class OrderService {
     private orderRepository: Repository<Order>;
     private orderDetailRepository: Repository<OrderDetail>;
     private productRepository: Repository<Products>;
     private userRepository: Repository<User>;
-
+    private paymentService : PaymentService;
     constructor() {
         this.orderRepository = AppDataSource.getRepository(Order);
         this.orderDetailRepository = AppDataSource.getRepository(OrderDetail);
         this.productRepository = AppDataSource.getRepository(Products);
         this.userRepository = AppDataSource.getRepository(User);
+        this.paymentService = new PaymentService();
     }
 
     // Crear un nuevo pedido
@@ -64,26 +67,34 @@ export class OrderService {
     }
 
     // Obtener los detalles de un pedido
-    async getOrderDetails(orderId: number): Promise<any> {
-        // Buscar los detalles del pedido y también incluir la relación con 'order' para obtener el 'status'
+    async getOrderDetails(orderId: number): Promise<{
+        order_id: number;
+        status: string;
+        payment_method?: string;
+        details: Array<{
+            product_id: number;
+            product_name: string;
+            quantity: number;
+            price: number;
+        }>;
+    }> {
         const orderDetails = await this.orderDetailRepository.find({
             where: { order: { order_id: orderId } },
-            relations: ["product", "order"], // Incluir la relación con 'order' para obtener el estado
+            relations: ["product", "order"],
         });
 
-        // Verificar si encontramos el pedido
         if (orderDetails.length === 0) {
             throw new Error(`Order with ID ${orderId} not found`);
         }
 
-        // Devolver el pedido con su estado y detalles
-        const order = orderDetails[0].order; // Obtener el 'order' desde el primer detalle (todos los detalles pertenecen al mismo pedido)
+        const order = orderDetails[0].order;
+        const payment = order.payment ? await this.paymentService.getPaymentById(order.payment) : null;
+
         return {
             order_id: order.order_id,
             status: order.status,
-            created_at: order.created_at,
-            updated_at: order.updated_at,
-            details: orderDetails.map((detail) => ({
+            payment_method: payment?.payment_method,
+            details: orderDetails.map(detail => ({
                 product_id: detail.product.product_id,
                 product_name: detail.product.name,
                 quantity: detail.quantity,

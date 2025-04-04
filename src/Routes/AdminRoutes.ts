@@ -1,15 +1,12 @@
 import express, { Router, Request, Response, NextFunction } from "express";
 import { AdminController } from "../Controller/AdminController";
-import { Auth } from "../Middleware/Auth";
 
 const router: Router = express.Router();
 const adminController = new AdminController();
-const auth = new Auth();
 
 // Usuarios baneados
-router.get('/admin/banned', (req: Request, res: Response, next: NextFunction) => {
-    auth.authenticate(req, res, next);
-}, async (req: Request, res: Response, next: NextFunction) => {
+
+router.get('/admin/banned', async (req: Request, res: Response, next: NextFunction) => {
     try {
         await adminController.getBannedUsers(req, res);
     } catch (error) {
@@ -18,9 +15,7 @@ router.get('/admin/banned', (req: Request, res: Response, next: NextFunction) =>
 });
 
 // Usuarios no baneados
-router.get('/admin/unbanned', (req: Request, res: Response, next: NextFunction) => {
-    auth.authenticate(req, res, next);
-}, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/admin/unbanned', async (req: Request, res: Response, next: NextFunction) => {
     try {
         await adminController.getUnbannedUsers(req, res);
     } catch (error) {
@@ -29,9 +24,7 @@ router.get('/admin/unbanned', (req: Request, res: Response, next: NextFunction) 
 });
 
 // Banear usuario
-router.post('/admin/ban/:userId', (req: Request, res: Response, next: NextFunction) => {
-    auth.authenticate(req, res, next);
-}, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/admin/ban/:userId', async (req: Request, res: Response, next: NextFunction) => {
     try {
         await adminController.banUser(req, res);
     } catch (error) {
@@ -40,9 +33,7 @@ router.post('/admin/ban/:userId', (req: Request, res: Response, next: NextFuncti
 });
 
 // Desbanear usuario
-router.post('/admin/unban/:userId', (req: Request, res: Response, next: NextFunction) => {
-    auth.authenticate(req, res, next);
-}, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/admin/unban/:userId', async (req: Request, res: Response, next: NextFunction) => {
     try {
         await adminController.unbanUser(req, res);
     } catch (error) {
@@ -50,10 +41,16 @@ router.post('/admin/unban/:userId', (req: Request, res: Response, next: NextFunc
     }
 });
 
-// Listar clientes
-router.get('/admin/clients', (req: Request, res: Response, next: NextFunction) => {
-    auth.authenticate(req, res, next);
-}, async (req: Request, res: Response, next: NextFunction) => {
+import cors from 'cors';
+
+// Configuración de CORS
+const corsOptions = {
+    origin: 'http://localhost:3000',
+    optionsSuccessStatus: 200
+};
+
+// Aplica CORS solo a rutas específicas
+router.get('/admin/clients', cors(corsOptions), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await adminController.getClients(req, res);
     } catch (error) {
@@ -62,9 +59,7 @@ router.get('/admin/clients', (req: Request, res: Response, next: NextFunction) =
 });
 
 // Listar vendedores
-router.get('/admin/sellers', (req: Request, res: Response, next: NextFunction) => {
-    auth.authenticate(req, res, next);
-}, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/admin/sellers', async (req: Request, res: Response, next: NextFunction) => {
     try {
         await adminController.getSellers(req, res);
     } catch (error) {

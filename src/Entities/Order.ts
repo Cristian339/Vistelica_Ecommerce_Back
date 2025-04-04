@@ -5,10 +5,13 @@ import {
     ManyToOne,
     CreateDateColumn,
     UpdateDateColumn,
-    JoinColumn, OneToMany
+    JoinColumn,
+    OneToMany,
+    OneToOne
 } from "typeorm";
 import { User } from "./User";
 import { OrderDetail } from "./OrderDetail";
+import { Payment } from "./Payment";
 
 @Entity({ schema: 'vistelica' })
 export class Order {
@@ -19,12 +22,11 @@ export class Order {
     @JoinColumn({ name: "user_id" })
     user!: User;
 
-    // @ManyToOne(() => User, user => user.orders)
-    // user?: User;
-
-
     @OneToMany(() => OrderDetail, orderDetail => orderDetail.order, { cascade: true })
     orderDetails?: OrderDetail[];
+
+    @OneToOne(() => Payment, payment => payment.order, {cascade: true, nullable: true})
+    payment?: Payment | null;
 
     @Column({ length: 50 })
     status!: string;
@@ -34,6 +36,9 @@ export class Order {
 
     @UpdateDateColumn()
     updated_at!: Date;
+
+    @Column({ type: "text", nullable: true })
+    address?: string;
 
     @Column({ type: "varchar", length: 100, nullable: true })
     session_id?: string | null;
