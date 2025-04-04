@@ -1,13 +1,14 @@
-import {Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, Unique } from "typeorm";
 import { Category } from "./Category";
 import { Products } from "./Products";
 
 @Entity({ schema: "vistelica" })
+@Unique(["name", "category"]) // Permite que "Camisetas" exista en diferentes categorías
 export class Subcategory {
     @PrimaryGeneratedColumn({ type: "int" })
     subcategory_id!: number;
 
-    @Column({ unique: true, length: 100 })
+    @Column({ length: 100 })
     name!: string;
 
     @ManyToOne(() => Category, (category) => category.subcategories, { onDelete: "CASCADE", nullable: false })
