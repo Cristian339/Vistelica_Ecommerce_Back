@@ -11,12 +11,13 @@ import AdminRoutes from "./Routes/AdminRoutes";
 import WhishlistRoutes from "./Routes/WishlistRoutes";
 import "reflect-metadata";
 import cors from 'cors';
+import CategoryRoutes from "./Routes/CategoryRoutes";
 
 
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
-
+app.use(cors());
 // Middlewares esenciales
 app.use(express.json());
 
@@ -29,6 +30,7 @@ app.use('/api', OrderRoutes);
 app.use('/api', CartRoutes);
 app.use('/api', AdminRoutes);
 app.use('/api', WhishlistRoutes);
+app.use('/api', CategoryRoutes);
 
 const start = async () => {
     try {
