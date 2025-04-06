@@ -113,4 +113,45 @@ export class OrderService {
     async cancelOrder(orderId: number): Promise<void> {
         await this.orderRepository.delete(orderId);
     }
+
+
+    async getAllOrdersWithClientInfo(): Promise<Array<{
+        order_id: number;
+        created_at: Date;
+        status: string;
+        client: {
+            name: string;
+            email: string;
+            address: string;
+        };
+    }>> {
+        const orders = await this.orderRepository.find({
+            relations: ["user", "user.profile"],
+            order: { created_at: "DESC" },
+            select: {
+                order_id: true,
+                created_at: true,
+                status: true,
+                address: true,
+                user: {
+                    user_id: true,
+                    email: true,
+                    profile: {
+                        name: true
+                    }
+                }
+            }
+        });
+
+        return orders.map(order => ({
+            order_id: order.order_id,
+            created_at: order.created_at,
+            status: order.status,
+            client: {
+                name: order.user?.profile?.name || 'Nombre no disponible',
+                email: order.user?.email || 'Email no disponible',
+                address: order.address || 'Dirección no especificada'
+            }
+        }));
+    }
 }

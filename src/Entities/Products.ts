@@ -67,8 +67,9 @@ export class Products {
     @OneToMany(() => Wishlist, (wishlist) => wishlist.product)
     wishlists: Wishlist[];
 
-    @Column("decimal", { precision: 5, scale: 2, nullable: true })
-    discount_percentage: number;
+
+    @Column('decimal', { precision: 5, scale: 2, nullable: true })
+    discount_percentage: number | null;
 
     constructor(product_id: number, name: string, description: string, price: number, stock_quantity: number, category: Category, subcategory: Subcategory, reviews: Review[], image_url: string, size: Size, created_at: Date, updated_at: Date, wishlists: Wishlist[], discount_percentage: number) {
         this.product_id = product_id;
