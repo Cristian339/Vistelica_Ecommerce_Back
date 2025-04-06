@@ -46,10 +46,9 @@ export class OrderController {
             }
             return res.status(500).json({ message: "Error creando pedido", error: "Unknown error" });
         }
-
     }
 
-    //Obtener pedidos de un usuario
+    // Obtener pedidos de un usuario
     async getOrdersByUser(req: Request, res: Response): Promise<Response> {
         try {
             const userId = Number(req.params.userId);
@@ -63,7 +62,6 @@ export class OrderController {
             }
             return res.status(500).json({ message: "Error obteniendo pedido", error: "Unknown error" });
         }
-
     }
 
     // Obtener detalles de un pedido
@@ -80,7 +78,6 @@ export class OrderController {
             }
             return res.status(500).json({ message: "Error obteniendo pedido", error: "Unknown error" });
         }
-
     }
 
     // Actualizar estado de un pedido
@@ -105,7 +102,6 @@ export class OrderController {
             }
             return res.status(500).json({ message: "Error actualizado pedido", error: "Unknown error" });
         }
-
     }
 
     // Cancelar un pedido
@@ -133,4 +129,22 @@ export class OrderController {
         }
     }
 
+    // Obtener todos los pedidos con información del cliente (versión con find)
+    async getAllOrdersWithClientInfo(req: Request, res: Response): Promise<Response> {
+        try {
+            const orders = await this.orderService.getAllOrdersWithClientInfo();
+            return res.status(200).json(orders);
+        } catch (error) {
+            if (error instanceof Error) {
+                return res.status(500).json({
+                    message: "Error obteniendo todos los pedidos",
+                    error: error.message
+                });
+            }
+            return res.status(500).json({
+                message: "Error obteniendo todos los pedidos",
+                error: "Unknown error"
+            });
+        }
+    }
 }
