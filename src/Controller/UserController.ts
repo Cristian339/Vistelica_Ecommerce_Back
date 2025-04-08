@@ -5,6 +5,7 @@ import {UserRegisterDTO} from "../DTO/UserRegisterDTO";
 import {UserService} from "../Service/UserService";
 import bcrypt from 'bcryptjs';
 import {JWTService} from "../Service/JWTService";
+import { Profile } from "../Entities/Profile";
 
 export class UserController {
     private userService: UserService = new UserService();
@@ -133,6 +134,80 @@ export class UserController {
             res.status(400).json({error: error.message});
         }
     }
+
+    async checkPhoneAvailability(req: Request, res: Response): Promise<Response> {
+        try {
+            const { phone } = req.body;
+
+            if (!phone) {
+                return res.status(400).json({
+                    available: false,
+                    message: "El número de teléfono es requerido"
+                });
+            }
+
+            const profileRepository = AppDataSource.getRepository(Profile);
+            const existingProfile = await profileRepository.findOne({
+                where: { phone: phone }
+            });
+
+            if (existingProfile) {
+                return res.status(200).json({
+                    available: false,
+                    message: "Este número de teléfono ya está registrado"
+                });
+            }
+
+            return res.status(200).json({
+                available: true,
+                message: "Número de teléfono disponible"
+            });
+        } catch (error) {
+            console.error('Error verificando disponibilidad de teléfono:', error);
+            return res.status(500).json({
+                available: false,
+                message: "Error al verificar disponibilidad del teléfono"
+            });
+        }
+    }
+
+
+    async checkEmailAvailability(req: Request, res: Response): Promise<Response> {
+        try {
+            const { email } = req.body;
+
+            if (!email) {
+                return res.status(400).json({
+                    available: false,
+                    message: "El email es requerido"
+                });
+            }
+
+            const userRepository = AppDataSource.getRepository(User);
+            const existingUser = await userRepository.findOne({
+                where: { email: email }
+            });
+
+            if (existingUser) {
+                return res.status(200).json({
+                    available: false,
+                    message: "Este correo ya está registrado"
+                });
+            }
+
+            return res.status(200).json({
+                available: true,
+                message: "Email disponible"
+            });
+        } catch (error) {
+            console.error('Error verificando disponibilidad de email:', error);
+            return res.status(500).json({
+                available: false,
+                message: "Error al verificar disponibilidad del email"
+            });
+        }
+    }
+
 
 
 }

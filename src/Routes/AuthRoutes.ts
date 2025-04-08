@@ -43,6 +43,24 @@ router.post('/reset-password', async (req: Request, res: Response, next: NextFun
     }
 });
 
+router.post('/check-email', async (req: Request, res: Response, next: NextFunction) => {
+    console.log('POST /check-email')
+    try {
+        await userController.checkEmailAvailability(req, res);
+    } catch(error) {
+        next(error);
+    }
+});
+
+router.post('/check-phone', async (req: Request, res: Response, next: NextFunction) => {
+    console.log('POST /check-phone')
+    try {
+        await userController.checkPhoneAvailability(req, res);
+    } catch(error) {
+        next(error);
+    }
+});
+
 
 
 
