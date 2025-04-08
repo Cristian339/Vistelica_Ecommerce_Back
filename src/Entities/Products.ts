@@ -56,6 +56,9 @@ export class Products {
     @Column({ type: "enum", enum: Size, nullable: true })
     size: Size;
 
+    @Column({type: "boolean", default: false})
+    discard!: boolean;
+
     @CreateDateColumn()
     created_at: Date;
 

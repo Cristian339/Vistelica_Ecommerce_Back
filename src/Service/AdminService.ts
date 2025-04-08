@@ -41,10 +41,23 @@ export class AdminService {
         });
     }
 
-    // Listar clientes
+    // Listar clientes con información de perfil
     async getClients(): Promise<User[]> {
         return await this.userRepository.find({
-            where: { role: Role.CLIENTE }
+            where: { role: Role.CLIENTE },
+            relations: ['profile'], // Cargar la relación con el perfil
+            select: {
+                user_id: true,
+                email: true,
+                role: true,
+                banned: true,
+                banned_at: true,
+                ban_reason: true,
+                profile: {
+                    name: true,
+                    lastName: true
+                }
+            }
         });
     }
 
