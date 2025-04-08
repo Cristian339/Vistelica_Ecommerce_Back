@@ -49,6 +49,7 @@ export class ProductController {
 
             // Crear el producto en la base de datos
             const product = await this.productService.createProduct(productDataFinal);
+            // @ts-ignore
             const productWithDetails = await this.productService.getProductById(product.product_id);
 
             // Devolver el producto completo con todos los detalles
@@ -100,6 +101,27 @@ export class ProductController {
             console.error("Error al obtener el producto:", error);
             return res.status(500).json({
                 message: "Error al obtener el producto",
+                error: (error as Error).message
+            });
+        }
+    }
+
+
+    // En tu backend (controller):
+    async changeModeDiscard(req: Request, res: Response): Promise<Response> {
+        try {
+            const { productId } = req.params;
+            const updatedProduct = await this.productService.changeModeDiscard(Number(productId));
+
+            // Obtener el producto con relaciones completas
+            // @ts-ignore
+            const productWithRelations = await this.productService.getProductById(updatedProduct.product_id);
+
+            return res.status(200).json(productWithRelations);
+        } catch (error) {
+            console.error('Error changing discard mode:', error);
+            return res.status(500).json({
+                message: 'Error changing discard mode',
                 error: (error as Error).message
             });
         }

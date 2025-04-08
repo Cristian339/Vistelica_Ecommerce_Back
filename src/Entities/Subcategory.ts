@@ -18,6 +18,9 @@ export class Subcategory {
     @OneToMany(() => Products, (product) => product.subcategory)
     products: Products[];
 
+    @Column({type: "boolean", default: false})
+    discard!: boolean;
+
     constructor(subcategory_id: number, name: string, category: Category, products: Products[]) {
         this.subcategory_id = subcategory_id;
         this.name = name;

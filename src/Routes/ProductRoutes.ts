@@ -63,6 +63,16 @@ router.get('/products/:productId', async (req: Request, res: Response, next: Nex
 });
 
 
+
+router.patch('/products/:productId/discard', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await productController.changeModeDiscard(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+
+
 router.put('/products/:id', async (req: Request, res: Response, next: NextFunction) => {
     try {
         await productController.update(req, res);
@@ -70,6 +80,8 @@ router.put('/products/:id', async (req: Request, res: Response, next: NextFuncti
         next(error);
     }
 });
+
+
 router.get('/products/category/:categoryId/subcategory/:subcategoryId', async (req: Request, res: Response, next: NextFunction) => {
     try {
         await productController.getByCategoryAndSubcategory(req, res);

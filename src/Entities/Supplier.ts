@@ -34,4 +34,7 @@ export class Supplier {
 
     @UpdateDateColumn()
     updated_at!: Date;
+
+    @Column({type: "boolean", default: false})
+    discard!: boolean;
 }
