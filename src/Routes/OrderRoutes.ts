@@ -44,4 +44,13 @@ router.delete("/orders/:orderId", async (req: Request, res: Response, next: Next
     }
 });
 
+// Para obtener todos los pedidos con información del cliente
+router.get("/orders", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await orderController.getAllOrdersWithClientInfo(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+
 export default router;

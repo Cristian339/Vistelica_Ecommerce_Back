@@ -12,6 +12,7 @@ import { Order } from "../Entities/Order";
 import { OrderDetail } from "../Entities/OrderDetail";
 import { Wishlist } from "../Entities/Wishlist";
 import {Payment} from "../Entities/Payment";
+import {Supplier} from "../Entities/Supplier";
 
 // Cargar variables de entorno
 dotenv.config();
@@ -32,7 +33,7 @@ export const AppDataSource = new DataSource({
     password: url.password, // Extraer la contraseña de la URL
     database: url.pathname.split('/')[1],
     schema: 'vistelica',
-    entities: [User, Profile, Products, Category, Subcategory, Review, Order, OrderDetail, Wishlist, Payment],
+    entities: [User, Profile, Products, Category, Subcategory, Review, Order, OrderDetail, Wishlist, Payment,Supplier],
     synchronize: true,
     logging: false,
     migrations: [],

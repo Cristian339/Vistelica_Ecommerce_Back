@@ -141,7 +141,6 @@ export class ProductService {
     }
 
 
-
     // Obtener productos por categoría y subcategoría
     async getProductsByCategoryAndSubcategory(categoryId: number, subcategoryId: number): Promise<Products[]> {
         try {
