@@ -77,7 +77,7 @@ export class UserService {
     }
 
 
-    private async getUserFromToken(token: string): Promise<User> {
+     async getUserFromToken(token: string): Promise<User> {
         const jwtService = new JWTService();
         const profile = await jwtService.extractPerfilToken(token, this);
         const user = await this.userRepository.findOne({

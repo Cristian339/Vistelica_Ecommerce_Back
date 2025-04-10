@@ -54,6 +54,30 @@ export class UserController {
         }
     }
 
+
+    async getUserByToken(req: Request, res: Response): Promise<Response> {
+        try {
+            // El token ya fue validado por el middleware auth.authenticate
+            const token = req.headers.authorization;
+            const user = await this.userService.getUserFromToken(token as string);
+
+            // Omitir información sensible como la contraseña
+            const userResponse = {
+                user_id: user.user_id,
+                email: user.email,
+                role: user.role,
+                profile: user.profile
+            };
+
+            return res.status(200).json(userResponse);
+        } catch (error) {
+            if (error instanceof Error) {
+                return res.status(400).json({ message: error.message });
+            }
+            return res.status(500).json({ message: 'Error al obtener usuario' });
+        }
+    }
+
     async login(req: Request, res: Response): Promise<Response> {
         try {
             if (!req.body.email) {
