@@ -90,7 +90,7 @@ export class ProductController {
                 discount_percentage: product.discount_percentage,
                 stock_quantity: product.stock_quantity,
                 size: product.size,
-                image_url: product.image_url,
+                image_url: product.subcategory.image_url_sub,
                 category: product.category,
                 subcategory: product.subcategory,
                 reviews: product.reviews,

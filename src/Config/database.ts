@@ -13,7 +13,9 @@ import { OrderDetail } from "../Entities/OrderDetail";
 import { Wishlist } from "../Entities/Wishlist";
 import { Payment } from "../Entities/Payment";
 import { Supplier } from "../Entities/Supplier";
+import { ProductImage } from "../Entities/ProductImage";
 
+// Cargar variables de entorno
 dotenv.config();
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -26,16 +28,18 @@ const url = new URL(databaseUrl);
 export const AppDataSource = new DataSource({
     type: 'postgres',
     host: url.hostname,
-    port: parseInt(url.port || '5432'), // Usa 5432 si no viene en la URL
+    port: parseInt(url.port || '5432'),
     username: url.username,
     password: url.password,
     database: url.pathname.split('/')[1],
     schema: 'vistelica',
-    entities: [User, Profile, Products, Category, Subcategory, Review, Order, OrderDetail, Wishlist, Payment, Supplier],
+    entities: [User, Profile, Products, Category, Subcategory, Review, Order, OrderDetail, Wishlist, Payment, Supplier, ProductImage],
     synchronize: true,
     logging: false,
-    migrations: [],
-    subscribers: []
+    ssl: true,
+    extra: {
+        ssl: {
+            rejectUnauthorized: false, // necesario para Render y conexiones TLS
+        }
+    }
 });
-
-export default AppDataSource;

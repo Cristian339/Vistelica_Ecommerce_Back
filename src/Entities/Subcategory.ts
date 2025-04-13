@@ -18,6 +18,9 @@ export class Subcategory {
     @OneToMany(() => Products, (product) => product.subcategory)
     products: Products[];
 
+    @Column({ nullable: true })
+    image_url_sub?: string;
+
     @Column({type: "boolean", default: false})
     discard!: boolean;
 
