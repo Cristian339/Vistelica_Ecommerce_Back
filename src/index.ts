@@ -38,7 +38,7 @@ app.use('/api', OrderRoutes);
 app.use('/api', CartRoutes);
 app.use('/api', AdminRoutes);
 app.use('/api', WhishlistRoutes);
-app.use('/api', CategoryRoutes);0
+app.use('/api', CategoryRoutes);
 app.use('/api', SupplierRoutes);
 
 const start = async () => {
