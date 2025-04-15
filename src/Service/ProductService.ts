@@ -3,7 +3,7 @@ import { Products } from '../Entities/Products';
 import { Category } from "../Entities/Category";
 import { Subcategory } from "../Entities/Subcategory";
 import { uploadImage } from '../Config/Cloudinary';
-import {where} from "sequelize";
+
 import {ProductImage} from "../Entities/ProductImage";
 
 
