@@ -1,9 +1,11 @@
 import {Request, Response} from 'express';
 import {ProductService} from '../Service/ProductService';
 import {uploadImage} from "../Config/Cloudinary";
+import {CategoryService} from "../Service/CategoryService";
 
 export class ProductController {
     private productService = new ProductService();
+    private CategoryService = new CategoryService();
 
     constructor() {
         this.create = this.create.bind(this);
@@ -16,45 +18,53 @@ export class ProductController {
 
     async create(req: Request, res: Response): Promise<Response> {
         try {
-            // Verifica si los datos vienen como un string dentro de `data`
+            // Parsear los datos enviados
             let productData: any = req.body.data ? JSON.parse(req.body.data) : req.body;
 
-            // Verifica si los datos son válidos
             if (!productData.name || !productData.description || !productData.price || !productData.stock_quantity || !productData.category_id || !productData.subcategory_id || !productData.size) {
-                return res.status(400).json({ error: 'Faltan algunos campos obligatorios' });
+                return res.status(400).json({ error: 'Faltan campos obligatorios' });
             }
-
-            console.log('Datos recibidos:', productData);
 
             const { name, description, price, stock_quantity, category_id, subcategory_id, size, discount_percentage } = productData;
 
-            let imageUrl: string | undefined = undefined;
+            // Obtener categoría y subcategoría por sus IDs
+            const category = await this.CategoryService.getCategoryById(category_id);
+            const subcategory = await this.CategoryService.getSubcategoryById(subcategory_id);
 
-            // Verificar si hay un archivo de imagen en la petición
-            if (req.file) {
-                imageUrl = await uploadImage('productos', req.file.path);
+            if (!category || !subcategory) {
+                return res.status(404).json({ error: 'Categoría o subcategoría no encontrados' });
             }
 
-            const productDataFinal = {
+            // Subir imágenes a Cloudinary si existen
+            const uploadedImages: { image_url: string, is_main: boolean }[] = [];
+
+            if (req.files && Array.isArray(req.files)) {
+                for (let i = 0; i < req.files.length; i++) {
+                    const file: any = req.files[i];
+                    const imageUrl = await uploadImage('productos', file.path);
+                    uploadedImages.push({
+                        image_url: imageUrl,
+                        is_main: i === 0, // La primera imagen es la principal
+                    });
+                }
+            }
+
+            // Crear el producto con los datos obtenidos y las imágenes
+            const product = await this.productService.createProduct({
                 name,
                 description,
                 price,
                 stock_quantity,
-                category_id,
-                subcategory_id,
+                category,  // Usamos el objeto de la categoría completa
+                subcategory,  // Usamos el objeto de la subcategoría completa
                 size,
                 discount_percentage,
-                image_url: imageUrl
-            };
+            }, uploadedImages);
 
-            // Crear el producto en la base de datos
-            const product = await this.productService.createProduct(productDataFinal);
-            // @ts-ignore
+            // Obtener el producto recién creado con los detalles
             const productWithDetails = await this.productService.getProductById(product.product_id);
 
-            // Devolver el producto completo con todos los detalles
             return res.status(201).json(productWithDetails);
-
         } catch (error) {
             console.error('Error al crear el producto:', error);
             return res.status(500).json({ msg: 'Error creando el producto', error: (error as Error).message });

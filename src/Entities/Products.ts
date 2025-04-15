@@ -44,7 +44,7 @@ export class Products {
 
     @ManyToOne(() => Category, (category) => category.products, { nullable: true, onDelete: "CASCADE" })
     @JoinColumn({ name: "category_id" })
-    category: Category; // Relación obligatoria con Category
+    category: Category;
 
     @ManyToOne(() => Subcategory, (subcategory) => subcategory.products, { nullable: true, onDelete: "SET NULL" })
     @JoinColumn({ name: "subcategory_id" })

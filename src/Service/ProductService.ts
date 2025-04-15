@@ -4,6 +4,7 @@ import { Category } from "../Entities/Category";
 import { Subcategory } from "../Entities/Subcategory";
 import { uploadImage } from '../Config/Cloudinary';
 import {where} from "sequelize";
+import {ProductImage} from "../Entities/ProductImage";
 
 
 export class ProductService {
@@ -11,30 +12,21 @@ export class ProductService {
     private productRepository = AppDataSource.getRepository(Products); // Repositorio de Products
     private categoryRepository = AppDataSource.getRepository(Category);
     private subcategoryRepository = AppDataSource.getRepository(Subcategory);
+    private imageRepository = AppDataSource.getRepository(ProductImage); // Repositorio de imágenes (ajusta según tu configuración)
 
 
     // Crear un nuevo producto
-    async createProduct(data: Partial<Products | undefined>): Promise<Products | null> {
+    async createProduct(data: Partial<Products>, images: { image_url: string, is_main: boolean }[]): Promise<Products> {
         try {
-            console.log('Datos recibidos:', data);
-
-
-
-            // Verifica si la categoría y subcategoría existen por su ID
+            // Buscar la categoría y subcategoría por sus ID
             const category = await this.categoryRepository.findOne({
-                // @ts-ignore
-                where: { category_id: data.category_id }
+                where: { category_id: data.category?.category_id }, // Usa la relación category
             });
 
             const subcategory = await this.subcategoryRepository.findOne({
-                // @ts-ignore
-                where: { subcategory_id: data.subcategory_id }
+                where: { subcategory_id: data.subcategory?.subcategory_id }, // Usa la relación subcategory
             });
 
-            console.log('Categoría encontrada:', category);
-            console.log('Subcategoría encontrada:', subcategory);
-
-            // Asegúrate de que la categoría y subcategoría existen
             if (!category || !subcategory) {
                 throw new Error("Categoria o subcategoria no encontradas");
             }
@@ -42,25 +34,29 @@ export class ProductService {
             // Crear el producto
             const product = this.productRepository.create({
                 ...data,
-                category: category,
-                subcategory: subcategory,
-                // @ts-ignore
+                category, // Asocia la categoría encontrada
+                subcategory, // Asocia la subcategoría encontrada
                 discount_percentage: data.discount_percentage ?? null,
             });
 
-            // Guarda el producto en la base de datos
-            await this.productRepository.save(product);
+            const savedProduct = await this.productRepository.save(product);
 
-            return product;
+            // Asociar imágenes al producto
+            for (const img of images) {
+                const newImage = this.imageRepository.create({
+                    image_url: img.image_url,
+                    is_main: img.is_main,
+                    product: savedProduct, // Asocia la imagen al producto
+                });
+                await this.imageRepository.save(newImage); // Guarda la imagen en la base de datos
+            }
+
+            return savedProduct;
         } catch (error) {
             console.error('Error al crear producto:', error);
             throw new Error("Error creating product");
         }
     }
-
-
-
-
 
 
     // Obtener todos los productos
