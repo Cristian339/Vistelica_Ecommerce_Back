@@ -16,6 +16,19 @@ import {ProductImage} from "./ProductImage";
 
 
 
+export enum Color {
+    RED = "RED",
+    BLACK = "BLACK",
+    WHITE = "WHITE",
+    BLUE = "BLUE",
+    GREEN = "GREEN",
+    YELLOW = "YELLOW",
+    ORANGE = "ORANGE",
+    PURPLE = "PURPLE",
+    BROWN = "BROWN",
+    GRAY = "GRAY",
+    PINK = "PINK"
+}
 export enum Size {
     XS = "XS",
     S = "S",
@@ -59,7 +72,8 @@ export class Products {
 
     @Column({ type: "enum", enum: Size, nullable: true })
     size: Size;
-
+    @Column({ type: "enum", enum: Color, array: true, nullable: true })
+    colors: Color[];
     @Column({type: "boolean", default: false})
     discard!: boolean;
 
@@ -79,7 +93,7 @@ export class Products {
     discount_percentage: number | null;
 
 
-    constructor(product_id: number, name: string, description: string, price: number, stock_quantity: number, category: Category, subcategory: Subcategory, reviews: Review[], images: ProductImage[], size: Size, discard: boolean, created_at: Date, orderDetails: OrderDetail[], updated_at: Date, wishlists: Wishlist[], discount_percentage: number | null) {
+    constructor(product_id: number, name: string, description: string, price: number, stock_quantity: number, category: Category, subcategory: Subcategory, reviews: Review[], images: ProductImage[], size: Size, colors: Color[], discard: boolean, created_at: Date, orderDetails: OrderDetail[], updated_at: Date, wishlists: Wishlist[], discount_percentage: number | null) {
         this.product_id = product_id;
         this.name = name;
         this.description = description;
@@ -90,6 +104,7 @@ export class Products {
         this.reviews = reviews;
         this.images = images;
         this.size = size;
+        this.colors = colors;
         this.discard = discard;
         this.created_at = created_at;
         this.orderDetails = orderDetails;

@@ -18,37 +18,34 @@ export class ProductService {
     // Crear un nuevo producto
     async createProduct(data: Partial<Products>, images: { image_url: string, is_main: boolean }[]): Promise<Products> {
         try {
-            // Buscar la categoría y subcategoría por sus ID
             const category = await this.categoryRepository.findOne({
-                where: { category_id: data.category?.category_id }, // Usa la relación category
+                where: { category_id: data.category?.category_id },
             });
 
             const subcategory = await this.subcategoryRepository.findOne({
-                where: { subcategory_id: data.subcategory?.subcategory_id }, // Usa la relación subcategory
+                where: { subcategory_id: data.subcategory?.subcategory_id },
             });
 
             if (!category || !subcategory) {
-                throw new Error("Categoria o subcategoria no encontradas");
+                throw new Error("Categoría o subcategoría no encontradas");
             }
 
-            // Crear el producto
             const product = this.productRepository.create({
                 ...data,
-                category, // Asocia la categoría encontrada
-                subcategory, // Asocia la subcategoría encontrada
+                category,
+                subcategory,
                 discount_percentage: data.discount_percentage ?? null,
             });
 
             const savedProduct = await this.productRepository.save(product);
 
-            // Asociar imágenes al producto
             for (const img of images) {
                 const newImage = this.imageRepository.create({
                     image_url: img.image_url,
                     is_main: img.is_main,
-                    product: savedProduct, // Asocia la imagen al producto
+                    product: savedProduct,
                 });
-                await this.imageRepository.save(newImage); // Guarda la imagen en la base de datos
+                await this.imageRepository.save(newImage);
             }
 
             return savedProduct;

@@ -18,16 +18,17 @@ export class ProductController {
 
     async create(req: Request, res: Response): Promise<Response> {
         try {
-            // Parsear los datos enviados
             let productData: any = req.body.data ? JSON.parse(req.body.data) : req.body;
 
-            if (!productData.name || !productData.description || !productData.price || !productData.stock_quantity || !productData.category_id || !productData.subcategory_id || !productData.size) {
-                return res.status(400).json({ error: 'Faltan campos obligatorios' });
+            const requiredFields = ['name', 'description', 'price', 'stock_quantity', 'category_id', 'subcategory_id', 'size', 'colors'];
+            for (const field of requiredFields) {
+                if (!productData[field]) {
+                    return res.status(400).json({ error: `Falta el campo obligatorio: ${field}` });
+                }
             }
 
-            const { name, description, price, stock_quantity, category_id, subcategory_id, size, discount_percentage } = productData;
+            const { name, description, price, stock_quantity, category_id, subcategory_id, size, discount_percentage, colors } = productData;
 
-            // Obtener categoría y subcategoría por sus IDs
             const category = await this.CategoryService.getCategoryById(category_id);
             const subcategory = await this.CategoryService.getSubcategoryById(subcategory_id);
 
@@ -35,7 +36,6 @@ export class ProductController {
                 return res.status(404).json({ error: 'Categoría o subcategoría no encontrados' });
             }
 
-            // Subir imágenes a Cloudinary si existen
             const uploadedImages: { image_url: string, is_main: boolean }[] = [];
 
             if (req.files && Array.isArray(req.files)) {
@@ -44,24 +44,23 @@ export class ProductController {
                     const imageUrl = await uploadImage('productos', file.path);
                     uploadedImages.push({
                         image_url: imageUrl,
-                        is_main: i === 0, // La primera imagen es la principal
+                        is_main: i === 0,
                     });
                 }
             }
 
-            // Crear el producto con los datos obtenidos y las imágenes
             const product = await this.productService.createProduct({
                 name,
                 description,
                 price,
                 stock_quantity,
-                category,  // Usamos el objeto de la categoría completa
-                subcategory,  // Usamos el objeto de la subcategoría completa
+                category,
+                subcategory,
                 size,
+                colors,
                 discount_percentage,
             }, uploadedImages);
 
-            // Obtener el producto recién creado con los detalles
             const productWithDetails = await this.productService.getProductById(product.product_id);
 
             return res.status(201).json(productWithDetails);
