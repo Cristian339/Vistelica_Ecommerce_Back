@@ -56,7 +56,7 @@ export class ProductController {
                 stock_quantity,
                 category,
                 subcategory,
-                size,
+                sizes: size,
                 colors,
                 discount_percentage,
             }, uploadedImages);
@@ -98,7 +98,7 @@ export class ProductController {
                 price: product.price,
                 discount_percentage: product.discount_percentage,
                 stock_quantity: product.stock_quantity,
-                size: product.size,
+                size: product.sizes,
                 image_url: product.subcategory.image_url_sub,
                 category: product.category,
                 subcategory: product.subcategory,
