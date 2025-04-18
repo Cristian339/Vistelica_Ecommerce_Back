@@ -20,14 +20,14 @@ export class ProductController {
         try {
             let productData: any = req.body.data ? JSON.parse(req.body.data) : req.body;
 
-            const requiredFields = ['name', 'description', 'price', 'stock_quantity', 'category_id', 'subcategory_id', 'size', 'colors'];
+            const requiredFields = ['name', 'description', 'price', 'stock_quantity', 'category_id', 'subcategory_id', 'sizes', 'colors'];
             for (const field of requiredFields) {
                 if (!productData[field]) {
                     return res.status(400).json({ error: `Falta el campo obligatorio: ${field}` });
                 }
             }
 
-            const { name, description, price, stock_quantity, category_id, subcategory_id, size, discount_percentage, colors } = productData;
+            const { name, description, price, stock_quantity, category_id, subcategory_id, sizes, discount_percentage, colors } = productData;
 
             const category = await this.CategoryService.getCategoryById(category_id);
             const subcategory = await this.CategoryService.getSubcategoryById(subcategory_id);
@@ -56,7 +56,7 @@ export class ProductController {
                 stock_quantity,
                 category,
                 subcategory,
-                sizes: size,
+                sizes,
                 colors,
                 discount_percentage,
             }, uploadedImages);
