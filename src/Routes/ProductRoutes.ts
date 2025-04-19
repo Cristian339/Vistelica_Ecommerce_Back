@@ -77,4 +77,40 @@ router.get('/product/:productId/price', async (req, res, next) => {
     }
 });
 
+
+// Nuevas rutas para las funcionalidades de productos
+router.get('/products/:productName/sizes', async (req, res, next) => {
+    try {
+        await productController.getSizesByName(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+
+router.get('/products/:productName/:size/colors', async (req, res, next) => {
+    try {
+        await productController.getColorsByNameAndSize(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+
+router.get('/products/:productName/:size/:color', async (req, res, next) => {
+    try {
+        await productController.getProductByNameSizeColor(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+
+router.get('/products/:productName/variants', async (req, res, next) => {
+    try {
+        await productController.getProductVariants(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+
+
+
 export default router;

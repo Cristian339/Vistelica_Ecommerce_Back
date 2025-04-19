@@ -38,6 +38,21 @@ export class ReviewService {
         }
     }
 
+    async getReviewsByProductName(productName: string): Promise<Review[]> {
+        try {
+            return await this.reviewRepository.find({
+                where: {
+                    product: { name: productName }
+                },
+                relations: ["user", "product"],
+                order: { created_at: "DESC" }
+            });
+        } catch (error) {
+            console.error("Error fetching reviews by product name:", error);
+            throw new Error("Error fetching reviews by product name");
+        }
+    }
+
     //  Obtener todas las reseñas de un producto
 
     async getReviewsByProduct(productId: number): Promise<Review[]> {
