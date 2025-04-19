@@ -21,7 +21,6 @@ router.post("/user",
     },
     async (req: Request, res: Response, next: NextFunction) => {
         try {
-
             await userController.getUserByToken(req, res);
         } catch (error) {
             next(error);
@@ -38,7 +37,6 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
     }
 });
 
-
 router.post('/reset-password-request', async (req: Request, res: Response, next: NextFunction) => {
     console.log('POST /reset-password-request')
     try {
@@ -48,10 +46,19 @@ router.post('/reset-password-request', async (req: Request, res: Response, next:
     }
 });
 
-router.post('/reset-password', async (req: Request, res: Response, next: NextFunction) => {
-    console.log('POST /reset-password')
+router.post('/verify-reset-code', async (req: Request, res: Response, next: NextFunction) => {
+    console.log('POST /verify-reset-code')
     try {
-        await userController.resetPassword(req, res);
+        await userController.verifyResetCode(req, res);
+    } catch(error) {
+        next(error);
+    }
+});
+
+router.post('/complete-password-reset', async (req: Request, res: Response, next: NextFunction) => {
+    console.log('POST /complete-password-reset')
+    try {
+        await userController.completePasswordReset(req, res);
     } catch(error) {
         next(error);
     }
@@ -74,9 +81,5 @@ router.post('/check-phone', async (req: Request, res: Response, next: NextFuncti
         next(error);
     }
 });
-
-
-
-
 
 export default router;

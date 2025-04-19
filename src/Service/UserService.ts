@@ -77,7 +77,7 @@ export class UserService {
     }
 
 
-     async getUserFromToken(token: string): Promise<User> {
+    async getUserFromToken(token: string): Promise<User> {
         const jwtService = new JWTService();
         const profile = await jwtService.extractPerfilToken(token, this);
         const user = await this.userRepository.findOne({
@@ -127,9 +127,9 @@ export class UserService {
     }
 
     /**
-     * Restablece la contraseña usando un token JWT
+     * Verifica si el código de restablecimiento es válido
      */
-    async resetPassword(token: string, code: string, newPassword: string): Promise<void> {
+    async verifyResetCode(token: string, code: string): Promise<boolean> {
         try {
             const jwtService = new JWTService();
             const decoded = jwtService.verifyToken(token);
@@ -143,11 +143,32 @@ export class UserService {
                 throw new Error('Código de verificación incorrecto');
             }
 
+            return true;
+        } catch (error) {
+            if (error instanceof Error) {
+                throw error;
+            }
+            throw new Error('Token inválido o expirado');
+        }
+    }
+
+    /**
+     * Completa el proceso de restablecimiento de contraseña después de verificar el código
+     */
+    async completePasswordReset(token: string, newPassword: string): Promise<void> {
+        try {
+            const jwtService = new JWTService();
+            const decoded = jwtService.verifyToken(token);
+
+            // Verificar que el token sea para restablecer contraseña
+            if (decoded.purpose !== 'password-reset') {
+                throw new Error('Token inválido para restablecer contraseña');
+            }
+
             const user = await this.loadUserByEmail(decoded.email);
             if (!user) {
                 throw new Error('Usuario no encontrado');
             }
-
 
             const isSamePassword = await bcrypt.compare(newPassword, user.password);
             if (isSamePassword) {
@@ -165,9 +186,13 @@ export class UserService {
         }
     }
 
-
-
-
-
-
+    /**
+     * Restablece la contraseña usando un token JWT
+     */
+    async resetPassword(token: string, code: string, newPassword: string): Promise<void> {
+        // Primero verificamos el código
+        await this.verifyResetCode(token, code);
+        // Si la verificación es exitosa, completamos el restablecimiento
+        await this.completePasswordReset(token, newPassword);
+    }
 }

@@ -159,6 +159,47 @@ export class UserController {
         }
     }
 
+    async verifyResetCode(req: Request, res: Response) {
+        try {
+            const {token, code} = req.body;
+
+            if (!token || !code) {
+                return res.status(400).json({error: 'Token y código son requeridos'});
+            }
+
+            const userService = new UserService();
+            // Este método solo verificará si el código es correcto
+            await userService.verifyResetCode(token, code);
+
+            res.status(200).json({
+                valid: true,
+                message: 'Código verificado correctamente'
+            });
+        } catch (error: any) {
+            res.status(400).json({
+                valid: false,
+                error: error.message
+            });
+        }
+    }
+
+    async completePasswordReset(req: Request, res: Response) {
+        try {
+            const {token, newPassword} = req.body;
+
+            if (!token || !newPassword) {
+                return res.status(400).json({error: 'Token y nueva contraseña requeridos'});
+            }
+
+            const userService = new UserService();
+            await userService.completePasswordReset(token, newPassword);
+
+            res.status(200).json({message: 'Contraseña actualizada correctamente'});
+        } catch (error: any) {
+            res.status(400).json({error: error.message});
+        }
+    }
+
     async checkPhoneAvailability(req: Request, res: Response): Promise<Response> {
         try {
             const { phone } = req.body;
@@ -195,7 +236,6 @@ export class UserController {
         }
     }
 
-
     async checkEmailAvailability(req: Request, res: Response): Promise<Response> {
         try {
             const { email } = req.body;
@@ -231,7 +271,4 @@ export class UserController {
             });
         }
     }
-
-
-
 }
