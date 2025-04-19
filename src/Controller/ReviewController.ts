@@ -7,6 +7,7 @@ export class ProductReviewController {
     constructor() {
         this.create = this.create.bind(this);
         this.getByProduct = this.getByProduct.bind(this);
+        this.getByProductName = this.getByProductName.bind(this); // Nuevo método
         this.getByUser = this.getByUser.bind(this);
         this.delete = this.delete.bind(this);
     }
@@ -14,7 +15,7 @@ export class ProductReviewController {
     // Crear una reseña para un producto
     async create(req: Request, res: Response): Promise<Response> {
         try {
-            const { user_id, product_id, rating, review_text } = req.body; // Recibe los datos desde el cuerpo de la solicitud
+            const { user_id, product_id, rating, review_text } = req.body;
             const review = await this.productReviewService.createReview(user_id, product_id, rating, review_text);
             return res.status(201).json(review);
         } catch (error) {
@@ -22,8 +23,7 @@ export class ProductReviewController {
         }
     }
 
-
-    //  Obtener todas las reseñas de un producto
+    // Obtener todas las reseñas de un producto por ID
     async getByProduct(req: Request, res: Response): Promise<Response> {
         try {
             const productId = Number(req.params.productId);
@@ -31,6 +31,20 @@ export class ProductReviewController {
             return res.status(200).json(reviews);
         } catch (error) {
             return res.status(500).json({ message: "Error fetching reviews for product", error });
+        }
+    }
+
+    // Obtener reseñar por nombre producto
+    async getByProductName(req: Request, res: Response): Promise<Response> {
+        try {
+            const { productName } = req.params;
+            const reviews = await this.productReviewService.getReviewsByProductName(productName);
+            return res.status(200).json(reviews);
+        } catch (error) {
+            return res.status(500).json({
+                message: "Error fetching reviews by product name",
+                error: error instanceof Error ? error.message : error
+            });
         }
     }
 
@@ -45,7 +59,7 @@ export class ProductReviewController {
         }
     }
 
-    //  Eliminar una reseña
+    // Eliminar una reseña
     async delete(req: Request, res: Response): Promise<Response> {
         try {
             const reviewId = Number(req.params.id);

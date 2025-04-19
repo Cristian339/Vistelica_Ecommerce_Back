@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { UserService } from "../Service/UserService";
+import {User} from "../Entities/User";
+import {AppDataSource} from "../Config/database";
 
 export class ProfileController {
     private userService = new UserService();
@@ -51,6 +53,25 @@ export class ProfileController {
         }
 
     }
+    async getUserProfile(req: Request, res: Response): Promise<Response> {
+        try {
+            const { userId } = req.params;
 
+            // Buscar el usuario con su perfil
+            const user = await AppDataSource.getRepository(User).findOne({
+                where: { user_id: Number(userId) },
+                relations: ["profile"], // Cargar la relación con el perfil
+            });
+
+            if (!user || !user.profile) {
+                return res.status(404).json({ message: "Perfil no encontrado para este usuario" });
+            }
+
+            return res.status(200).json(user.profile);
+        } catch (error) {
+            console.error("Error al obtener el perfil del usuario:", error);
+            return res.status(500).json({ message: "Error al obtener el perfil", error: (error as Error).message });
+        }
+    }
 
 }
