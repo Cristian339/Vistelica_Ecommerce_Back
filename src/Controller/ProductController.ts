@@ -2,6 +2,7 @@ import {Request, Response} from 'express';
 import {ProductService} from '../Service/ProductService';
 import {uploadImage} from "../Config/Cloudinary";
 import {CategoryService} from "../Service/CategoryService";
+import {Color, Size} from "../Entities/Products";
 
 export class ProductController {
     private productService = new ProductService();
@@ -166,6 +167,11 @@ export class ProductController {
             return res.status(500).json({message: 'Error deleting product', error});
         }
     }
+
+
+
+
+
     // Método para obtener el precio, descuento y precio con descuento
     async getProductPriceWithDiscount(req: Request, res: Response): Promise<Response> {
         try {
@@ -193,6 +199,93 @@ export class ProductController {
             return res.status(500).json({ msg: 'Error obteniendo el precio con descuento', error: (error as Error).message });
         }
     }
+
+
+
+
+
+    /**
+     * Obtiene las tallas disponibles para un producto por nombre
+     */
+    async getSizesByName(req: Request, res: Response): Promise<Response> {
+        try {
+            const { productName } = req.params;
+            const sizes = await this.productService.getSizesByProductName(productName);
+            return res.status(200).json({ sizes });
+        } catch (error) {
+            console.error('Error getting sizes by product name:', error);
+            return res.status(500).json({
+                message: 'Error getting sizes by product name',
+                error: (error as Error).message
+            });
+        }
+    }
+
+    /**
+     * Obtiene los colores disponibles para un producto específico
+     */
+    async getColorsByNameAndSize(req: Request, res: Response): Promise<Response> {
+        try {
+            const { productName, size } = req.params;
+            const colors = await this.productService.getColorsByProductAndSize(
+                productName,
+                size as Size
+            );
+            return res.status(200).json({ colors });
+        } catch (error) {
+            console.error('Error getting colors by product and size:', error);
+            return res.status(500).json({
+                message: 'Error getting colors by product and size',
+                error: (error as Error).message
+            });
+        }
+    }
+
+    /**
+     * Obtiene un producto específico por nombre, talla y color
+     */
+    async getProductByNameSizeColor(req: Request, res: Response): Promise<Response> {
+        try {
+            const { productName, size, color } = req.params;
+            const product = await this.productService.getProductByNameSizeAndColor(
+                productName,
+                size as Size,
+                color as Color
+            );
+
+            if (!product) {
+                return res.status(404).json({
+                    message: 'Product not found with these specifications'
+                });
+            }
+
+            return res.status(200).json(product);
+        } catch (error) {
+            console.error('Error getting product by name, size and color:', error);
+            return res.status(500).json({
+                message: 'Error getting product by name, size and color',
+                error: (error as Error).message
+            });
+        }
+    }
+
+    /**
+     * Obtiene todas las variantes de un producto por nombre
+     */
+    async getProductVariants(req: Request, res: Response): Promise<Response> {
+        try {
+            const { productName } = req.params;
+            const variants = await this.productService.getProductVariantsByName(productName);
+            return res.status(200).json(variants);
+        } catch (error) {
+            console.error('Error getting product variants:', error);
+            return res.status(500).json({
+                message: 'Error getting product variants',
+                error: (error as Error).message
+            });
+        }
+    }
+
 
 
 }

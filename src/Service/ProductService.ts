@@ -1,5 +1,5 @@
 import { AppDataSource } from '../Config/database'; // Asegúrate de importar la fuente de datos correcta
-import { Products } from '../Entities/Products';
+import {Color, Products, Size} from '../Entities/Products';
 import { Category } from "../Entities/Category";
 import { Subcategory } from "../Entities/Subcategory";
 import { uploadImage } from '../Config/Cloudinary';
@@ -220,6 +220,114 @@ export class ProductService {
             where: { product_id: updatedProduct.product_id },
             relations: ['category', 'subcategory']
         });
+    }
+
+
+    async getSizesByProductName(productName: string): Promise<Size[]> {
+        try {
+            const products = await this.productRepository.find({
+                where: {
+                    name: productName,
+                    discard: false
+                },
+                select: ['sizes']
+            });
+
+            // Filtramos tallas únicas, eliminando nulos y duplicados
+            const uniqueSizes = Array.from(
+                new Set(
+                    products
+                        .map(p => p.sizes)
+                        .filter(size => size !== null)
+                )
+            ) as unknown as Size[];
+
+            return uniqueSizes;
+        } catch (error) {
+            console.error('Error fetching sizes by product name:', error);
+            throw new Error('Error fetching sizes by product name');
+        }
+    }
+
+    /**
+     * Obtiene los colores disponibles para una combinación nombre-talla
+     * (Ahora consolida los colores de todos los productos que coincidan)
+     */
+    async getColorsByProductAndSize(productName: string, size: Size): Promise<Color[]> {
+        try {
+            const products = await this.productRepository.find({
+                where: {
+                    name: productName,
+                    sizes: size,
+                    discard: false
+                },
+                select: ['colors']
+            });
+
+            // Combinamos todos los arrays de colores y filtramos únicos
+            const allColors = products.flatMap(p => p.colors || []);
+            const uniqueColors = Array.from(new Set(allColors)) as Color[];
+
+            return uniqueColors;
+        } catch (error) {
+            console.error('Error fetching colors by product and size:', error);
+            throw new Error('Error fetching colors by product and size');
+        }
+    }
+
+    /**
+     * Obtiene un producto específico por nombre, talla y color
+     * (Ahora busca productos que contengan el color especificado en su array)
+     */
+    async getProductByNameSizeAndColor(
+        productName: string,
+        size: Size,
+        color: Color
+    ): Promise<Products | null> {
+        try {
+            // Buscamos productos que coincidan con nombre y talla
+            const products = await this.productRepository.find({
+                where: {
+                    name: productName,
+                    sizes: size,
+                    discard: false
+                },
+                relations: ['category', 'subcategory', 'images']
+            });
+
+            // Filtramos por color (buscando en el array de colores)
+            const matchingProducts = products.filter(p =>
+                p.colors && p.colors.includes(color)
+            );
+
+            return matchingProducts[0] || null;
+        } catch (error) {
+            console.error('Error fetching product by name, size and color:', error);
+            throw new Error('Error fetching product by name, size and color');
+        }
+    }
+
+    /**
+     * Obtiene todas las variantes de un producto por nombre
+     * (Incluyendo todas las combinaciones talla-color)
+     */
+    async getProductVariantsByName(productName: string): Promise<Products[]> {
+        try {
+            return await this.productRepository.find({
+                where: {
+                    name: productName,
+                    discard: false
+                },
+                relations: ['category', 'subcategory', 'images'],
+                order: {
+                    sizes: 'ASC',
+                    price: 'ASC'
+                }
+            });
+        } catch (error) {
+            console.error('Error fetching product variants by name:', error);
+            throw new Error('Error fetching product variants by name');
+        }
     }
 
 
