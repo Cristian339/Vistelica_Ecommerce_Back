@@ -29,7 +29,9 @@ export enum Color {
     BROWN = "BROWN",
     GRAY = "GRAY",
     PINK = "PINK",
-    BEIGE = "BEIGE"
+    BEIGE = "BEIGE",
+    GOLD = "GOLD",
+    SILVER = "SILVER",
 }
 export enum Size {
     XS = "XS",
