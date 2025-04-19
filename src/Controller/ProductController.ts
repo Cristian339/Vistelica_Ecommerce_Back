@@ -21,7 +21,7 @@ export class ProductController {
         try {
             let productData: any = req.body.data ? JSON.parse(req.body.data) : req.body;
 
-            const requiredFields = ['name', 'description', 'price', 'stock_quantity', 'category_id', 'subcategory_id', 'sizes', 'colors'];
+            const requiredFields = ['name', 'description', 'price', 'stock_quantity', 'category_id', 'subcategory_id',  'colors'];
             for (const field of requiredFields) {
                 if (!productData[field]) {
                     return res.status(400).json({ error: `Falta el campo obligatorio: ${field}` });
