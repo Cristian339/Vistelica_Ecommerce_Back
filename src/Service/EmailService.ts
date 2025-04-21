@@ -46,7 +46,7 @@ export class EmailService {
                         border: 1px solid #e0e0e0;
                     }
                     .header {
-                        background-color: #2c3e50;
+                        background-color: #c99a02;
                         padding: 20px;
                         text-align: center;
                     }
