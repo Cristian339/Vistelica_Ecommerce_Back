@@ -195,4 +195,53 @@ export class UserService {
         // Si la verificación es exitosa, completamos el restablecimiento
         await this.completePasswordReset(token, newPassword);
     }
+
+
+    async socialAuth(email: string, name: string, photoURL?: string, provider?: string): Promise<User> {
+        const userRepository = AppDataSource.getRepository(User);
+        const profileRepository = AppDataSource.getRepository(Profile);
+
+        // Buscar usuario por email
+        let user = await userRepository.findOne({
+            where: { email },
+            relations: ['profile']
+        });
+
+        if (!user) {
+            // Crear nuevo perfil primero
+            const profile = new Profile();
+            profile.name = name;
+            profile.lastName = '';
+            profile.avatar = photoURL || '';
+            profile.email = email;
+
+            await profileRepository.save(profile);
+
+            // Corregir el tipo de role usando el enum Role
+            const newUser = userRepository.create({
+                email: email,
+                password: await bcrypt.hash(Math.random().toString(36).substring(2, 15), 10),
+                role: Role.CLIENTE, // Usar el enum Role en lugar de string
+                banned: false,
+                banned_at: null,
+                ban_reason: null,
+                profile: profile
+            });
+
+            // Guardar el usuario
+            await userRepository.save(newUser);
+
+            // Recargar el usuario con el perfil
+            user = await userRepository.findOne({
+                where: { email },
+                relations: ['profile']
+            });
+
+            if (!user) {
+                throw new Error("No se pudo crear el usuario");
+            }
+        }
+
+        return user;
+    }
 }

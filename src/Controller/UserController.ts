@@ -271,4 +271,47 @@ export class UserController {
             });
         }
     }
+
+
+    async socialAuth(req: Request, res: Response) {
+        try {
+            const { authorization } = req.headers;
+            const { name, email, photoURL, provider } = req.body;
+
+            if (!authorization || !authorization.startsWith('Bearer ')) {
+                return res.status(401).json({ error: 'Token no proporcionado' });
+            }
+
+            const token = authorization.split('Bearer ')[1];
+
+            // Importa Firebase Admin
+            const admin = require('../Config/FirebaseConfig').default;
+
+            // Verifica el token de Firebase
+            const decodedToken = await admin.auth().verifyIdToken(token);
+
+            // Verifica que el email coincida con el token
+            if (decodedToken.email !== email) {
+                return res.status(401).json({ error: 'Datos de usuario no válidos' });
+            }
+
+            const user = await this.userService.socialAuth(email, name, photoURL, provider);
+
+            // Generar token JWT usando el servicio existente
+            const jwtToken = this.jwtService.generateToken(user);
+
+            return res.status(200).json({
+                token: jwtToken,
+                user: {
+                    id: user.user_id,
+                    email: user.email,
+                    // Se elimina username ya que no existe en la entidad User
+                    profilePicture: user.profile?.avatar // Cambiado de avatarUrl a avatar
+                }
+            });
+        } catch (error: any) {
+            console.error('Error en social auth:', error);
+            return res.status(401).json({ error: 'Autenticación fallida' });
+        }
+    }
 }

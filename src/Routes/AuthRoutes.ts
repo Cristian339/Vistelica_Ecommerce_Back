@@ -82,4 +82,13 @@ router.post('/check-phone', async (req: Request, res: Response, next: NextFuncti
     }
 });
 
+router.post('/social-auth', async (req: Request, res: Response, next: NextFunction) => {
+    console.log('POST /social-auth')
+    try {
+        await userController.socialAuth(req, res);
+    } catch(error) {
+        next(error);
+    }
+});
+
 export default router;
