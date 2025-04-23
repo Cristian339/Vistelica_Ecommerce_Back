@@ -59,7 +59,8 @@ export class ReviewService {
         try {
             return await this.reviewRepository.find({
                 where: { product: { product_id: productId } },
-                relations: ["user", "product"]
+                relations: ["user", "user.profile", "product", "product.subcategory"],
+                order: { created_at: "DESC" }
             });
         } catch (error) {
             console.error("Error fetching reviews by product:", error);

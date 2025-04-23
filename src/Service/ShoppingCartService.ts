@@ -44,7 +44,7 @@ export class ShoppingCartService {
             return await this.orderRepository.findOne({
                 where: {
                     user: { user_id: userId },
-                    status: "en carro"
+                    status: "Carrito"
                 },
                 relations: ["orderDetails", "orderDetails.product"],
             });

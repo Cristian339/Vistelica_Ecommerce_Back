@@ -84,10 +84,14 @@ export class ProductService {
     // Obtener un producto por su ID
     async getProductById(id: number): Promise<Products | null> {
         try {
-            // Buscar el producto junto con las relaciones de categoría y subcategoría
+            // Buscar el producto con todas las relaciones necesarias
             const product = await this.productRepository.findOne({
                 where: { product_id: id },
-                relations: ['category', 'subcategory'], // Cargar las relaciones de categoría y subcategoría
+                relations: [
+                    'category',
+                    'subcategory',
+                    'images'
+                ],
             });
 
             if (!product) {

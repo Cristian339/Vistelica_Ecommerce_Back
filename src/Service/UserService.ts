@@ -5,10 +5,10 @@ import {AppDataSource} from "../Config/database";
 import bcrypt from 'bcryptjs';
 import {JWTService} from "./JWTService";
 import {EmailService} from "./EmailService";
-
+import {ShoppingCartService} from "./ShoppingCartService";
 export class UserService {
     private userRepository = AppDataSource.getRepository(User);
-
+    private cartRepository = new ShoppingCartService();
     async createUser(data: UserRegisterDTO): Promise<User> {
         const existingEmail = await this.userRepository.findOne({
             where: {email: data.email}
@@ -43,7 +43,7 @@ export class UserService {
 
         await profileRepository.save(profile);
 
-
+        this.cartRepository.createOrder(savedUser.user_id);
         const result = await this.userRepository.findOne({
             where: {user_id: savedUser.user_id},
             relations: ['profile']
