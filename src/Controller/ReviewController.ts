@@ -28,9 +28,38 @@ export class ProductReviewController {
         try {
             const productId = Number(req.params.productId);
             const reviews = await this.productReviewService.getReviewsByProduct(productId);
-            return res.status(200).json(reviews);
+
+            // Mapear las reseñas para devolver solo los datos necesarios
+            const formattedReviews = reviews.map(review => ({
+                review_id: review.review_id,
+                rating: review.rating,
+                review_text: review.review_text,
+                created_at: review.created_at,
+                user: {
+                    user_id: review.user.user_id,
+                    name: review.user.profile?.name || 'Usuario',
+                    lastName: review.user.profile?.lastName || '',
+                    avatar: review.user.profile?.avatar || null
+                },
+                product: {
+                    product_id: review.product.product_id,
+                    name: review.product.name,
+                    image_url: review.product.subcategory?.image_url_sub || null
+                }
+            }));
+
+            return res.status(200).json({
+                success: true,
+                count: formattedReviews.length,
+                data: formattedReviews
+            });
         } catch (error) {
-            return res.status(500).json({ message: "Error fetching reviews for product", error });
+            console.error("Error fetching reviews for product:", error);
+            return res.status(500).json({
+                success: false,
+                message: "Error al obtener las reseñas del producto",
+                error: (error as Error).message
+            });
         }
     }
 
