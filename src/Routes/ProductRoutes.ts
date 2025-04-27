@@ -68,6 +68,24 @@ router.get('/products/category/:categoryId/subcategory/:subcategoryId', async (r
     }
 });
 
+// Rutas para obtener imágenes principales
+router.get('/products/images/main', async (req, res, next) => {
+    try {
+        await productController.getMainProductImages(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Ruta con ID específico antes que rutas con parámetros dinámicos similares
+router.get('/products/:productId/image/main', async (req, res, next) => {
+    try {
+        await productController.getMainImageByProductId(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+
 // Obtener precio con descuento de un producto
 router.get('/product/:productId/price', async (req, res, next) => {
     try {

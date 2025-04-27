@@ -39,7 +39,13 @@ export enum Size {
     M = "M",
     L = "L",
     XL = "XL",
-    XXL = "XXL"
+    XXL = "XXL",
+    // Tallas para zapatos
+    SIZE_36 = "36",
+    SIZE_37 = "37",
+    SIZE_38 = "38",
+    SIZE_39 = "39",
+    SIZE_40 = "40"
 }
 
 @Entity({ schema: 'vistelica' })
