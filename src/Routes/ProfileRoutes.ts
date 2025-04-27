@@ -35,6 +35,14 @@ router.get('/profile', (req: Request, res: Response, next: NextFunction) => {
         next(error);
     }
 });
-
+router.put('/profile', (req: Request, res: Response, next: NextFunction) => {
+    auth.authenticate(req, res, next);
+}, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await profileController.updateProfile(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
 
 export default router;
