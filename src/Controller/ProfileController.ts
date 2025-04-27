@@ -55,12 +55,14 @@ export class ProfileController {
     }
     async getUserProfile(req: Request, res: Response): Promise<Response> {
         try {
-            const { userId } = req.params;
+            const { id } = (req as any).user;
+            if (!id || isNaN(Number(id))) {
+                return res.status(400).json({ message: "ID de usuario no válido" });
+            }
 
-            // Buscar el usuario con su perfil
             const user = await AppDataSource.getRepository(User).findOne({
-                where: { user_id: Number(userId) },
-                relations: ["profile"], // Cargar la relación con el perfil
+                where: { user_id: Number(id) },
+                relations: ["profile"],
             });
 
             if (!user || !user.profile) {
@@ -73,5 +75,7 @@ export class ProfileController {
             return res.status(500).json({ message: "Error al obtener el perfil", error: (error as Error).message });
         }
     }
+
+
 
 }

@@ -26,17 +26,15 @@ router.post('/change-password', (req: Request, res: Response, next: NextFunction
         next(error);
     }
 });
-router.get('/profile/:userId',
-    (req: Request, res: Response, next: NextFunction) => {
-        auth.authenticate(req, res, next);
-    },
-    async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            await profileController.getUserProfile(req, res);
-        } catch (error) {
-            next(error);
-        }
+router.get('/profile', (req: Request, res: Response, next: NextFunction) => {
+    auth.authenticate(req, res, next);
+}, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await profileController.getUserProfile(req, res);
+    } catch (error) {
+        next(error);
     }
-);
+});
+
 
 export default router;
