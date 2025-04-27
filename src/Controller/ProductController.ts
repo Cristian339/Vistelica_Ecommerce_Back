@@ -288,5 +288,56 @@ export class ProductController {
     }
 
 
+    /**
+     * Obtiene todas las imágenes principales de los productos
+     */
+    async getMainProductImages(req: Request, res: Response): Promise<void> {
+        try {
+            const images = await this.productService.getMainProductImages();
+
+            if (!images || images.length === 0) {
+                res.status(404).json({ message: 'No se encontraron imágenes principales' });
+                return;
+            }
+
+            res.status(200).json(images);
+        } catch (error) {
+            console.error('Error al obtener imágenes principales:', error);
+            res.status(500).json({
+                message: 'Error al obtener imágenes principales',
+                error: error instanceof Error ? error.message : 'Error desconocido'
+            });
+        }
+    }
+
+    /**
+     * Obtiene la imagen principal de un producto específico por ID
+     */
+    async getMainImageByProductId(req: Request, res: Response): Promise<void> {
+        try {
+            const productId = parseInt(req.params.productId);
+
+            if (isNaN(productId)) {
+                res.status(400).json({ error: 'ID de producto inválido' });
+                return;
+            }
+
+            const image = await this.productService.getMainImageByProductId(productId);
+
+            if (!image) {
+                res.status(404).json({ message: 'No se encontró imagen principal para este producto' });
+                return;
+            }
+
+            res.status(200).json(image);
+        } catch (error) {
+            console.error('Error al obtener imagen principal:', error);
+            res.status(500).json({
+                message: 'Error al obtener imagen principal',
+                error: error instanceof Error ? error.message : 'Error desconocido'
+            });
+        }
+    }
+
 
 }
