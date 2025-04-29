@@ -1,19 +1,16 @@
-import { AppDataSource } from '../Config/database'; // Asegúrate de importar la fuente de datos correcta
-import {Color, Products, Size} from '../Entities/Products';
+import { AppDataSource } from '../Config/database';
+import { ProductImageDto } from '../Dto/ProductImageDto';
+import { Color, Products, Size } from '../Entities/Products';
 import { Category } from "../Entities/Category";
 import { Subcategory } from "../Entities/Subcategory";
 import { uploadImage } from '../Config/Cloudinary';
-
-import {ProductImage} from "../Entities/ProductImage";
-
+import { ProductImage } from "../Entities/ProductImage";
 
 export class ProductService {
-
-    private productRepository = AppDataSource.getRepository(Products); // Repositorio de Products
+    private productRepository = AppDataSource.getRepository(Products);
     private categoryRepository = AppDataSource.getRepository(Category);
     private subcategoryRepository = AppDataSource.getRepository(Subcategory);
-    private imageRepository = AppDataSource.getRepository(ProductImage); // Repositorio de imágenes (ajusta según tu configuración)
-
+    private imageRepository = AppDataSource.getRepository(ProductImage);
 
     // Crear un nuevo producto
     async createProduct(data: Partial<Products>, images: { image_url: string, is_main: boolean }[]): Promise<Products> {
@@ -55,22 +52,19 @@ export class ProductService {
         }
     }
 
-
     // Obtener todos los productos
     async getAllProducts(): Promise<Products[]> {
         try {
             console.log('Consultando todos los productos...');
 
-            // Obtenemos los productos con las relaciones de categoría y subcategoría
             const products = await this.productRepository.find({
-                relations: ['category', 'subcategory'], // Asegúrate de incluir las relaciones
+                relations: ['category', 'subcategory'],
             });
 
-            // Extraemos solo las IDs de categoría y subcategoría junto con los productos
             const productsWithCategoryAndSubcategory = products.map(product => ({
                 ...product,
-                categoryId: product.category?.category_id,    // ID de la categoría
-                subcategoryId: product.subcategory?.subcategory_id,  // ID de la subcategoría
+                categoryId: product.category?.category_id,
+                subcategoryId: product.subcategory?.subcategory_id,
             }));
 
             console.log('Productos obtenidos:', productsWithCategoryAndSubcategory);
@@ -84,7 +78,7 @@ export class ProductService {
     // Obtener un producto por su ID
     async getProductById(id: number): Promise<Products | null> {
         try {
-            // Buscar el producto con todas las relaciones necesarias
+            // Buscar el producto junto con las relaciones de categoría y subcategoría
             const product = await this.productRepository.findOne({
                 where: { product_id: id },
                 relations: [
@@ -110,10 +104,9 @@ export class ProductService {
         try {
             console.log('Datos recibidos:', data);
 
-
             const product = await this.productRepository.findOne({
                 where: { product_id: id },
-                relations: ['category', 'subcategory'], // Cargar las relaciones de categoría y subcategoría
+                relations: ['category', 'subcategory'],
             });
 
             if (!product) {
@@ -157,10 +150,10 @@ export class ProductService {
         try {
             const products = await this.productRepository.find({
                 where: {
-                    category: { category_id: categoryId }, // Filtrar por la categoría
-                    subcategory: { subcategory_id: subcategoryId } // Filtrar por la subcategoría
+                    category: { category_id: categoryId },
+                    subcategory: { subcategory_id: subcategoryId }
                 },
-                relations: ['category', 'subcategory'] // Asegúrate de que las relaciones se carguen correctamente
+                relations: ['category', 'subcategory']
             });
             return products;
         } catch (error) {
@@ -175,7 +168,7 @@ export class ProductService {
             // Primero, buscar el producto con sus relaciones (categoría y subcategoría)
             const product = await this.productRepository.findOne({
                 where: {product_id: id},
-                relations: ['category', 'subcategory'], // Aseguramos que se traigan las relaciones
+                relations: ['category', 'subcategory'],
             });
 
             if (!product) {
@@ -334,5 +327,35 @@ export class ProductService {
         }
     }
 
+    async getMainProductImages(): Promise<ProductImageDto[]> {
+        try {
+            const mainImages = await this.imageRepository.find({
+                where: { is_main: true },
+                relations: ['product']
+            });
 
+            return mainImages.map(image => new ProductImageDto(image));
+        } catch (error) {
+            console.error('Error al obtener imágenes principales:', error);
+            throw new Error('Error al obtener imágenes principales');
+        }
+    }
+
+    async getMainImageByProductId(productId: number): Promise<ProductImageDto | null> {
+        try {
+            const mainImage = await this.imageRepository.findOne({
+                where: {
+                    product: { product_id: productId },
+                    is_main: true
+                },
+                relations: ['product']
+            });
+
+            if (!mainImage) return null;
+            return new ProductImageDto(mainImage);
+        } catch (error) {
+            console.error(`Error al obtener imagen principal:`, error);
+            throw new Error('Error al obtener imagen principal');
+        }
+    }
 }
