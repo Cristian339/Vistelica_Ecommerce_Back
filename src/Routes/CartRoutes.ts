@@ -42,6 +42,16 @@ router.post('/cart/items', async (req: Request, res: Response, next: NextFunctio
     }
 });
 
+
+router.get('/cart/count', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await shoppingCartDetailController.countCartItems(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+
+
 // En CartRoutes.ts
 router.get('/cart/items/:orderId', async (req: Request, res: Response, next: NextFunction) => {
     try {

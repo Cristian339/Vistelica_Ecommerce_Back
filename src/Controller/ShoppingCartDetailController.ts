@@ -11,6 +11,37 @@ export class ShoppingCartDetailController {
         this.orderService = new ShoppingCartService();
     }
 
+    async countCartItems(req: Request, res: Response): Promise<void> {
+        const { userId, sessionId } = req.query;
+
+        try {
+            if (!userId && !sessionId) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Se requiere userId o sessionId'
+                });
+                return;
+            }
+
+            const count = await this.orderService.countCartItems(
+                userId ? Number(userId) : undefined,
+                sessionId as string | undefined
+            );
+
+            res.status(200).json({
+                success: true,
+                message: 'Conteo de productos obtenido',
+                data: { count }
+            });
+        } catch (error) {
+            res.status(500).json({
+                success: false,
+                message: 'Error al contar productos del carrito',
+                error: error instanceof Error ? error.message : 'Error desconocido'
+            });
+        }
+    }
+
     // Crear un nuevo pedido (carrito)
     async createOrder(req: Request, res: Response): Promise<void> {
         const { userId, sessionId } = req.body;

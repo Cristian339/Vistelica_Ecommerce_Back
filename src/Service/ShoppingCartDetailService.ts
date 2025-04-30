@@ -68,6 +68,41 @@ export class ShoppingCartDetailService {
         }
     }
 
+    async transferOrderDetails(sourceOrderId: number, targetOrderId: number): Promise<void> {
+        try {
+            // Obtener todos los orderDetails del order origen
+            const sourceOrderDetails = await this.orderDetailRepository.find({
+                where: { order: { order_id: sourceOrderId } },
+                relations: ["order", "product"]
+            });
+
+            if (sourceOrderDetails.length === 0) {
+                return; // No hay detalles que transferir
+            }
+
+            // Transferir cada orderDetail al nuevo order
+            for (const detail of sourceOrderDetails) {
+                const newDetail = this.orderDetailRepository.create({
+                    order: { order_id: targetOrderId } as Order,
+                    product: detail.product,
+                    quantity: detail.quantity,
+                    price: detail.price
+                });
+                await this.orderDetailRepository.save(newDetail);
+
+                // Eliminar el orderDetail original
+                await this.orderDetailRepository.delete(detail.order_detail_id);
+            }
+
+            // Eliminar el order original (opcional, dependiendo de tus necesidades)
+            // Esto debería hacerse en el ShoppingCartService después de llamar a este método
+
+        } catch (error) {
+            console.error('Error al transferir detalles de pedido:', error);
+            throw new Error('Error al transferir detalles de pedido');
+        }
+    }
+
 
     async calculateTotalPrice(userId?: number, sessionId?: string): Promise<{
         totalPrice: number,
