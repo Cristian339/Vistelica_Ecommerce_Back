@@ -340,4 +340,33 @@ export class ProductController {
     }
 
 
+    /**
+     * Obtiene todas las imágenes de un producto específico por ID
+     */
+    async getAllImagesByProductId(req: Request, res: Response): Promise<void> {
+        try {
+            const productId = parseInt(req.params.productId);
+
+            if (isNaN(productId)) {
+                res.status(400).json({ error: 'ID de producto inválido' });
+                return;
+            }
+
+            const images = await this.productService.getAllImagesByProductId(productId);
+
+            if (!images || images.length === 0) {
+                res.status(404).json({ message: 'No se encontraron imágenes para este producto' });
+                return;
+            }
+
+            res.status(200).json(images);
+        } catch (error) {
+            console.error('Error al obtener imágenes del producto:', error);
+            res.status(500).json({
+                message: 'Error al obtener imágenes del producto',
+                error: error instanceof Error ? error.message : 'Error desconocido'
+            });
+        }
+    }
+
 }

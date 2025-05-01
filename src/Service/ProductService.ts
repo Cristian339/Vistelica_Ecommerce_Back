@@ -358,4 +358,28 @@ export class ProductService {
             throw new Error('Error al obtener imagen principal');
         }
     }
+
+    /**
+     * Obtiene todas las imágenes de un producto por su ID
+     * @param productId ID del producto
+     * @returns Array de ProductImageDto con todas las imágenes del producto
+     */
+    async getAllImagesByProductId(productId: number): Promise<ProductImageDto[]> {
+        try {
+            const images = await this.imageRepository.find({
+                where: {
+                    product: { product_id: productId }
+                },
+                relations: ['product'],
+                order: {
+                    is_main: 'DESC' // Opcional: ordenar para que la imagen principal aparezca primero
+                }
+            });
+
+            return images.map(image => new ProductImageDto(image));
+        } catch (error) {
+            console.error(`Error al obtener todas las imágenes del producto ${productId}:`, error);
+            throw new Error('Error al obtener imágenes del producto');
+        }
+    }
 }

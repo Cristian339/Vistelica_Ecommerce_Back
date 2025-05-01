@@ -86,6 +86,15 @@ router.get('/products/:productId/image/main', async (req, res, next) => {
     }
 });
 
+// Ruta para obtener todas las imágenes de un producto
+router.get('/products/:productId/images', async (req, res, next) => {
+    try {
+        await productController.getAllImagesByProductId(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+
 // Obtener precio con descuento de un producto
 router.get('/product/:productId/price', async (req, res, next) => {
     try {

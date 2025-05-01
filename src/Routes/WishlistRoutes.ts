@@ -35,4 +35,15 @@ router.get("/wishlist/user/:userId", (req: Request, res: Response, next: NextFun
     }
 });
 
+
+
+router.get("/wishlist/check/:productId", (req: Request, res: Response, next: NextFunction) => {
+    auth.authenticate(req, res, next);
+}, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await wishlistController.checkProductInWishlist(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
 export default router;

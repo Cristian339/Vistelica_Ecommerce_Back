@@ -69,4 +69,27 @@ export class WishlistController {
             return res.status(500).json({ message: "Error al obtener la lista de deseos", error });
         }
     }
+
+    async checkProductInWishlist(req: Request, res: Response): Promise<Response> {
+        try {
+            const userId = req.user?.id;
+            const productId = Number(req.params.productId);
+
+            if (!userId || !productId) {
+                return res.status(400).json({
+                    message: "Se requieren userId y productId válidos"
+                });
+            }
+
+            const existingItem = await this.wishlistService.findWishlistItem(userId, productId);
+            return res.status(200).json({
+                isInWishlist: !!existingItem
+            });
+        } catch (error) {
+            return res.status(500).json({
+                message: "Error al verificar producto en wishlist",
+                error: error instanceof Error ? error.message : "Error desconocido"
+            });
+        }
+    }
 }
