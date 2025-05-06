@@ -91,4 +91,17 @@ router.post('/social-auth', async (req: Request, res: Response, next: NextFuncti
     }
 });
 
+router.post('/logout',
+    (req: Request, res: Response, next: NextFunction) => {
+        auth.authenticate(req, res, next);
+    },
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            await userController.logout(req, res);
+        } catch(error) {
+            next(error);
+        }
+    }
+);
+
 export default router;
