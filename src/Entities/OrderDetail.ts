@@ -11,9 +11,6 @@ export class OrderDetail {
     @JoinColumn({ name: "order_id" })
     order!: Order;
 
-    // @ManyToOne(() => Order, order => order.orderDetails)
-    // order?: Order;
-
     @ManyToOne(() => Products)
     @JoinColumn({ name: "product_id" })
     product!: Products;
@@ -23,4 +20,18 @@ export class OrderDetail {
 
     @Column("decimal", { precision: 10, scale: 2 })
     price!: number;
+
+    @Column({
+        type: "enum",
+        enum: ["XS", "S", "M", "L", "XL", "XXL", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40"],
+        nullable: true
+    })
+    size!: string | null;
+
+    @Column({
+        type: "enum",
+        enum: ["RED", "BLACK", "WHITE", "BLUE", "GREEN", "YELLOW", "ORANGE", "PURPLE", "BROWN", "GRAY", "PINK", "BEIGE", "GOLD", "SILVER", "NAVY"],
+        nullable: true
+    })
+    color!: string | null;
 }
