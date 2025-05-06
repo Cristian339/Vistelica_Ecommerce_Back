@@ -8,7 +8,14 @@ export class ShoppingCartDetailService {
     private orderDetailRepository = AppDataSource.getRepository(OrderDetail);
 
     // Añadir un producto al carrito (OrderDetail)
-    async addProductToOrder(orderId: number, productId: number, quantity: number, price: number): Promise<OrderDetail> {
+    async addProductToOrder(
+        orderId: number,
+        productId: number,
+        quantity: number,
+        price: number,
+        size: string | null = null,
+        color: string | null = null
+    ): Promise<OrderDetail> {
         try {
             const order = { order_id: orderId } as Order;
             const product = { product_id: productId } as Products;
@@ -17,6 +24,8 @@ export class ShoppingCartDetailService {
                 product,
                 quantity,
                 price,
+                size,
+                color
             });
             return await this.orderDetailRepository.save(orderDetail);
         } catch (error) {
