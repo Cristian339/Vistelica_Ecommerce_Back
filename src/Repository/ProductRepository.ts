@@ -1,6 +1,7 @@
 import { Repository } from "typeorm";
 import { AppDataSource } from "../Config/database";
 import { Products } from "../Entities/Products";
+import {ProductOverviewDto} from "../DTO/ProductOverviewDto";
 
 export class ProductRepository {
     private repo: Repository<Products>;
@@ -30,4 +31,66 @@ export class ProductRepository {
     async deleteProduct(id: number): Promise<void> {
         await this.repo.delete(id);
     }
+
+    // Obtener 10 productos aleatorios con información destacada
+    async getRandomFeaturedProducts(): Promise<ProductOverviewDto[]> {
+        return this.repo
+            .createQueryBuilder("product")
+            .leftJoin("product.reviews", "review")
+            .leftJoin("product.subcategory", "subcategory")
+            .leftJoin(
+                qb => qb
+                    .from("product_image", "img")
+                    .where("img.is_main = true"),
+                "main_image",
+                "main_image.product_id = product.product_id"
+            )
+            .select([
+                "product.product_id AS product_id",
+                "product.name AS name",
+                "product.price AS price",
+                "product.colors AS colors",
+                "subcategory.name AS subcategory_name",
+                "main_image.image_url AS main_image"
+            ])
+            .addSelect("AVG(review.rating)", "average_rating")
+            .groupBy("product.product_id")
+            .addGroupBy("subcategory.name")
+            .addGroupBy("main_image.image_url")
+            .orderBy("RANDOM()")
+            .limit(10)
+            .getRawMany();
+    }
+
+
+    async getFirstTenProducts(): Promise<ProductOverviewDto[]> {
+        return this.repo
+            .createQueryBuilder("product")
+            .leftJoin("product.reviews", "review")
+            .leftJoin("product.subcategory", "subcategory")
+            .leftJoin(
+                qb => qb
+                    .from("product_image", "img")
+                    .where("img.is_main = true"),
+                "main_image",
+                "main_image.product_id = product.product_id"
+            )
+            .select([
+                "product.product_id AS product_id",
+                "product.name AS name",
+                "product.price AS price",
+                "product.colors AS colors",
+                "subcategory.name AS subcategory_name",
+                "main_image.image_url AS main_image"
+            ])
+            .addSelect("AVG(review.rating)", "average_rating")
+            .groupBy("product.product_id")
+            .addGroupBy("subcategory.name")
+            .addGroupBy("main_image.image_url")
+            .orderBy("product.product_id", "ASC")
+            .limit(10)
+            .getRawMany();
+    }
+
+
 }

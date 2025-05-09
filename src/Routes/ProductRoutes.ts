@@ -138,6 +138,14 @@ router.get('/products/:productName/variants', async (req, res, next) => {
     }
 });
 
+// Obtener productos destacados aleatorios
+router.get('/products/featured/random', async (req, res, next) => {
+    try {
+        await productController.getRandomFeaturedProducts(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
 
 
 export default router;

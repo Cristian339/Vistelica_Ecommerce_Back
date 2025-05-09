@@ -3,10 +3,13 @@ import {ProductService} from '../Service/ProductService';
 import {uploadImage} from "../Config/Cloudinary";
 import {CategoryService} from "../Service/CategoryService";
 import {Color, Size} from "../Entities/Products";
+import { ProductRepository } from '../Repository/ProductRepository';
+import {ProductOverviewDto} from "../DTO/ProductOverviewDto";
 
 export class ProductController {
     private productService = new ProductService();
     private CategoryService = new CategoryService();
+    private productRepository = new ProductRepository();
 
     constructor() {
         this.create = this.create.bind(this);
@@ -14,7 +17,7 @@ export class ProductController {
         this.getById = this.getById.bind(this);
         this.update = this.update.bind(this);
         this.delete = this.delete.bind(this);
-
+        this.getRandomFeaturedProducts = this.getRandomFeaturedProducts.bind(this);
     }
 
     async create(req: Request, res: Response): Promise<Response> {
@@ -368,5 +371,37 @@ export class ProductController {
             });
         }
     }
+    async getRandomFeaturedProducts(req: Request, res: Response): Promise<Response> {
+        try {
+            const products = await this.productRepository.getFirstTenProducts();
+
+            if (!products || products.length === 0) {
+                return res.status(404).json({ message: 'No se encontraron productos destacados' });
+            }
+
+            const formattedProducts: ProductOverviewDto[] = products.map(product => ({
+                product_id: product.product_id,
+                name: product.name,
+                price: product.price,
+                colors: product.colors,
+                main_image: product.main_image,
+                average_rating:
+                    product.average_rating !== null && product.average_rating !== undefined
+                        ? parseFloat(parseFloat(String(product.average_rating)).toFixed(1))
+                        : 0.0,
+                subcategory_name: product.subcategory_name
+            }));
+
+            return res.status(200).json(formattedProducts);
+        } catch (error) {
+            console.error('Error al obtener productos destacados:', error);
+            return res.status(500).json({
+                message: 'Error obteniendo productos destacados',
+                error: (error as Error).message
+            });
+        }
+    }
+
+
 
 }
