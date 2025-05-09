@@ -14,6 +14,8 @@ import "reflect-metadata";
 import cors from 'cors';
 import CategoryRoutes from "./Routes/CategoryRoutes";
 import colorDetectionRoutes from './Routes/colorDetectionRoutes';
+import AddressRoutes from './Routes/AddressRoutes';
+
 
 dotenv.config();
 const app = express();
@@ -41,6 +43,7 @@ app.use('/api', WhishlistRoutes);
 app.use('/api', CategoryRoutes);
 app.use('/api', SupplierRoutes);
 app.use('/api', colorDetectionRoutes);
+app.use('/api/addresses', AddressRoutes);
 const start = async () => {
     try {
         // Conectar a la base de datos con TypeORM

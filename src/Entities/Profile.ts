@@ -19,9 +19,6 @@ export class Profile {
     @Column({ unique: true, length: 255, nullable: false })
     email!: string;
 
-    @Column({ nullable: true })
-    address!: string;
-
     @Column({ nullable: true, length: 15 })
     phone!: string;
 

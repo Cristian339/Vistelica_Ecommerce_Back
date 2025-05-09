@@ -3,6 +3,7 @@ import {Review} from "./Review";
 import {Profile} from "./Profile";
 import {Order} from "./Order";
 import {Wishlist} from "./Wishlist";
+import {AdditionalAddress} from "./Address";
 
 export enum Role {
     ADMIN = 0,
@@ -45,8 +46,23 @@ export class User {
     @OneToMany(() => Order, order => order.user)
     orders?: Order[];
 
+    @OneToMany(() => AdditionalAddress, address => address.user)
+    additional_addresses?: AdditionalAddress[];
 
-    constructor(user_id: number, email: string, password: string, role: Role, banned: boolean, banned_at: Date | null, ban_reason: string | null, profile: Profile, reviews: Review[], wishlists: Wishlist[], orders: Order[]) {
+    constructor(
+        user_id: number,
+        email: string,
+        password: string,
+        role: Role,
+        banned: boolean,
+        banned_at: Date | null,
+        ban_reason: string | null,
+        profile: Profile,
+        reviews: Review[],
+        wishlists: Wishlist[],
+        orders: Order[],
+        additional_addresses?: AdditionalAddress[]
+    ) {
         this.user_id = user_id;
         this.email = email;
         this.password = password;
@@ -58,5 +74,6 @@ export class User {
         this.reviews = reviews;
         this.wishlists = wishlists;
         this.orders = orders;
+        this.additional_addresses = additional_addresses;
     }
 }

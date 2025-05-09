@@ -84,7 +84,6 @@ export class ProfileController {
                 name,
                 lastName,
                 email,
-                address,
                 phone,
                 avatar,
                 born_date
@@ -113,7 +112,6 @@ export class ProfileController {
                 user.profile.email = email;
                 user.email = email; // También actualizar el email en la entidad User
             }
-            if (address !== undefined) user.profile.address = address;
             if (phone !== undefined) user.profile.phone = phone;
             if (avatar !== undefined) user.profile.avatar = avatar;
             if (born_date !== undefined) user.profile.born_date = new Date(born_date);

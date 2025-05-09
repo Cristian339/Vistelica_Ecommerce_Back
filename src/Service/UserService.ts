@@ -9,6 +9,8 @@ import {ShoppingCartService} from "./ShoppingCartService";
 export class UserService {
     private userRepository = AppDataSource.getRepository(User);
     private cartRepository = new ShoppingCartService();
+
+
     async createUser(data: UserRegisterDTO): Promise<User> {
         const existingEmail = await this.userRepository.findOne({
             where: {email: data.email}
@@ -35,7 +37,6 @@ export class UserService {
             name: data.name,
             lastName: data.lastName,
             email: data.email,
-            address: data.address,
             phone: data.phone,
             avatar: data.avatar,
             born_date: data.born_date
@@ -244,4 +245,10 @@ export class UserService {
 
         return user;
     }
+
+
+
+
+
+
 }
