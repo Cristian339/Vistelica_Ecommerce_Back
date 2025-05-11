@@ -6,4 +6,5 @@ export class ProductOverviewDto {
     main_image: string;
     average_rating: number;
     subcategory_name: string;
+    reviews_count: number;
 }

@@ -91,6 +91,66 @@ export class ProductRepository {
             .limit(10)
             .getRawMany();
     }
+    async getTopRatedFeaturedProducts(): Promise<ProductOverviewDto[]> {
+        return this.repo
+            .createQueryBuilder("product")
+            .leftJoin("product.reviews", "review")
+            .leftJoin("product.subcategory", "subcategory")
+            .leftJoin(
+                qb => qb
+                    .from("product_image", "img")
+                    .where("img.is_main = true"),
+                "main_image",
+                "main_image.product_id = product.product_id"
+            )
+            .select([
+                "product.product_id AS product_id",
+                "product.name AS name",
+                "product.price AS price",
+                "product.colors AS colors",
+                "subcategory.name AS subcategory_name",
+                "main_image.image_url AS main_image"
+            ])
+            .addSelect("AVG(review.rating)", "average_rating")
+            .addSelect("COUNT(review.review_id)", "reviews_count")
+            .groupBy("product.product_id")
+            .addGroupBy("subcategory.name")
+            .addGroupBy("main_image.image_url")
+            .having("AVG(review.rating) IS NOT NULL")
+            .orderBy("average_rating", "DESC")
+            .limit(8)
+            .getRawMany();
+    }
+    async getRandomFeaturedAccessoryProducts(): Promise<ProductOverviewDto[]> {
+        return this.repo
+            .createQueryBuilder("product")
+            .leftJoin("product.reviews", "review")
+            .leftJoin("product.subcategory", "subcategory")
+            .leftJoin(
+                qb => qb
+                    .from("product_image", "img")
+                    .where("img.is_main = true"),
+                "main_image",
+                "main_image.product_id = product.product_id"
+            )
+            .select([
+                "product.product_id AS product_id",
+                "product.name AS name",
+                "product.price AS price",
+                "product.colors AS colors",
+                "subcategory.name AS subcategory_name",
+                "main_image.image_url AS main_image"
+            ])
+            .addSelect("AVG(review.rating)", "average_rating")
+            .where("LOWER(subcategory.name) LIKE :subcategoryName", { subcategoryName: 'accesorios%' })
+            .groupBy("product.product_id")
+            .addGroupBy("subcategory.name")
+            .addGroupBy("main_image.image_url")
+            .orderBy("RANDOM()")
+            .limit(10)
+            .getRawMany();
+    }
+
 
 
 }

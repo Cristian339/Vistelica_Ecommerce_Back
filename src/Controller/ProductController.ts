@@ -373,13 +373,13 @@ export class ProductController {
     }
     async getRandomFeaturedProducts(req: Request, res: Response): Promise<Response> {
         try {
-            const products = await this.productRepository.getFirstTenProducts();
+            const products = await this.productRepository.getRandomFeaturedProducts();
 
             if (!products || products.length === 0) {
                 return res.status(404).json({ message: 'No se encontraron productos destacados' });
             }
 
-            const formattedProducts: ProductOverviewDto[] = products.map(product => ({
+            const formattedProducts: ProductOverviewDto[] = products.map((product: any) => ({
                 product_id: product.product_id,
                 name: product.name,
                 price: product.price,
@@ -389,8 +389,12 @@ export class ProductController {
                     product.average_rating !== null && product.average_rating !== undefined
                         ? parseFloat(parseFloat(String(product.average_rating)).toFixed(1))
                         : 0.0,
-                subcategory_name: product.subcategory_name
+                subcategory_name: product.subcategory_name,
+                reviews_count: product.reviews_count !== null && product.reviews_count !== undefined
+                    ? parseInt(product.reviews_count, 10)
+                    : 0
             }));
+
 
             return res.status(200).json(formattedProducts);
         } catch (error) {
@@ -402,6 +406,61 @@ export class ProductController {
         }
     }
 
+    async getTopRatedFeaturedProducts(req: Request, res: Response): Promise<Response> {
+        try {
+            const products = await this.productRepository.getTopRatedFeaturedProducts();
+
+            if (!products || products.length === 0) {
+                return res.status(404).json({ message: 'No se encontraron productos destacados por rating' });
+            }
+
+            const formattedProducts: ProductOverviewDto[] = products.map((product: any) => ({
+                product_id: product.product_id,
+                name: product.name,
+                price: product.price,
+                colors: product.colors,
+                main_image: product.main_image,
+                average_rating:
+                    product.average_rating !== null && product.average_rating !== undefined
+                        ? parseFloat(parseFloat(String(product.average_rating)).toFixed(1))
+                        : 0.0,
+                subcategory_name: product.subcategory_name,
+                reviews_count: parseInt(product.reviews_count, 10) || 0
+            }));
+
+            return res.status(200).json(formattedProducts);
+        } catch (error) {
+            console.error('Error al obtener productos destacados por rating:', error);
+            return res.status(500).json({
+                message: 'Error obteniendo productos destacados por rating',
+                error: (error as Error).message
+            });
+        }
+    }
+    async getRandomAccessoryProducts(req: Request, res: Response): Promise<Response> {
+        try {
+            const products = await this.productRepository.getRandomFeaturedAccessoryProducts();
+
+            if (!products || products.length === 0) {
+                return res.status(404).json({ message: 'No se encontraron productos de accesorios' });
+            }
+
+            const formattedProducts = products.map((product: any) => ({
+                product_id: product.product_id,
+                name: product.name,
+                price: product.price,
+                main_image: product.main_image
+            }));
+
+            return res.status(200).json(formattedProducts);
+        } catch (error) {
+            console.error('Error al obtener productos de accesorios:', error);
+            return res.status(500).json({
+                message: 'Error obteniendo productos de accesorios',
+                error: (error as Error).message
+            });
+        }
+    }
 
 
 }

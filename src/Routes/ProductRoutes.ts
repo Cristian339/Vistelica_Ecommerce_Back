@@ -147,5 +147,19 @@ router.get('/products/featured/random', async (req, res, next) => {
     }
 });
 
+router.get('/products/featured/top-rated', async (req, res, next) => {
+    try {
+        await productController.getTopRatedFeaturedProducts(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+router.get('/products/featured/accessories', async (req, res, next) => {
+    try {
+        await productController.getRandomAccessoryProducts(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
 
 export default router;
