@@ -15,6 +15,7 @@ import cors from 'cors';
 import CategoryRoutes from "./Routes/CategoryRoutes";
 import colorDetectionRoutes from './Routes/colorDetectionRoutes';
 import AddressRoutes from './Routes/AddressRoutes';
+import PaymentMethodRoutes from "./Routes/PaymentMethodRoutes";
 
 
 dotenv.config();
@@ -44,6 +45,7 @@ app.use('/api', CategoryRoutes);
 app.use('/api', SupplierRoutes);
 app.use('/api', colorDetectionRoutes);
 app.use('/api/addresses', AddressRoutes);
+app.use('/api', PaymentMethodRoutes);
 const start = async () => {
     try {
         // Conectar a la base de datos con TypeORM

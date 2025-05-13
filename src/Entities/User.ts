@@ -4,6 +4,7 @@ import {Profile} from "./Profile";
 import {Order} from "./Order";
 import {Wishlist} from "./Wishlist";
 import {AdditionalAddress} from "./Address";
+import {PaymentMethod} from "./PaymentMethod";
 
 export enum Role {
     ADMIN = 0,
@@ -49,6 +50,9 @@ export class User {
     @OneToMany(() => AdditionalAddress, address => address.user)
     additional_addresses?: AdditionalAddress[];
 
+    @OneToMany(() => PaymentMethod, paymentMethod => paymentMethod.user)
+    payment_methods?: PaymentMethod[]; // Hacerla opcional con ?
+
     constructor(
         user_id: number,
         email: string,
@@ -61,7 +65,8 @@ export class User {
         reviews: Review[],
         wishlists: Wishlist[],
         orders: Order[],
-        additional_addresses?: AdditionalAddress[]
+        additional_addresses?: AdditionalAddress[],
+        payment_methods?: PaymentMethod[]
     ) {
         this.user_id = user_id;
         this.email = email;
@@ -75,5 +80,9 @@ export class User {
         this.wishlists = wishlists;
         this.orders = orders;
         this.additional_addresses = additional_addresses;
+
+        if (payment_methods) {
+            this.payment_methods = payment_methods;
+        }
     }
 }

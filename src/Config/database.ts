@@ -15,6 +15,7 @@ import { Payment } from "../Entities/Payment";
 import { Supplier } from "../Entities/Supplier";
 import { ProductImage } from "../Entities/ProductImage";
 import { AdditionalAddress } from "../Entities/Address";
+import {PaymentMethod} from "../Entities/PaymentMethod";
 
 // Cargar variables de entorno
 dotenv.config();
@@ -34,7 +35,7 @@ export const AppDataSource = new DataSource({
     password: url.password,
     database: url.pathname.split('/')[1],
     schema: 'vistelica',
-    entities: [User, Profile, Products, Category, Subcategory, Review, Order, OrderDetail, Wishlist, Payment, Supplier, ProductImage,AdditionalAddress],
+    entities: [User, Profile, Products, Category, Subcategory, Review, Order, OrderDetail, Wishlist, Payment, Supplier, ProductImage,AdditionalAddress,PaymentMethod],
     synchronize: true,
     logging: false,
     ssl: true,
