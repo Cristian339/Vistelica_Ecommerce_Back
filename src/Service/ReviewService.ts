@@ -19,10 +19,22 @@ export class ReviewService {
     async createReview(userId: number, productId: number, rating: number, reviewText: string): Promise<Review> {
         try {
             const user = await this.userRepository.findOneBy({ user_id: userId });
-            if (!user) throw new Error("User not found");
+            if (!user) throw new Error("Usuario no encontrado");
 
             const product = await this.productRepository.findOneBy({ product_id: productId });
-            if (!product) throw new Error("Product not found");
+            if (!product) throw new Error("Product no encontrado");
+
+            // Verificar si el usuario ya tiene una review para este producto
+            const existingReview = await this.reviewRepository.findOne({
+                where: {
+                    user: { user_id: userId },
+                    product: { product_id: productId }
+                }
+            });
+
+            if (existingReview) {
+                throw new Error("Este usuario ya comento en esta review");
+            }
 
             const review = new Review();
             review.user = user;
@@ -33,8 +45,8 @@ export class ReviewService {
 
             return await this.reviewRepository.save(review);
         } catch (error) {
-            console.error("Error creating review:", error);
-            throw new Error("Error creating review");
+            console.error("Error creando review:", error);
+            throw error;
         }
     }
 

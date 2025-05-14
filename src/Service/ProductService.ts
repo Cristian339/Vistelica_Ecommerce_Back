@@ -383,4 +383,37 @@ export class ProductService {
         }
     }
 
+
+
+    async searchProductsByNameAndCategories(
+        searchText: string,
+        categoryIds?: number[]
+    ): Promise<{ product_id: number; name: string }[]> {
+        try {
+            const query = this.productRepository.createQueryBuilder('product')
+                .select(['product.product_id', 'product.name'])
+                .where('product.discard = false');
+
+            // Filtro por texto en el nombre
+            if (searchText) {
+                query.andWhere('LOWER(product.name) LIKE :searchText', {
+                    searchText: `%${searchText.toLowerCase()}%`
+                });
+            }
+
+            // Filtro por categorías si hay
+            if (categoryIds && categoryIds.length > 0) {
+                query.andWhere('product.category_id IN (:...categoryIds)', { categoryIds });
+            }
+
+            query.orderBy('product.name', 'ASC');
+
+            return await query.getRawMany(); // devuelve solo los campos seleccionados
+        } catch (error) {
+            console.error('Error searching products:', error);
+            throw new Error('Error searching products');
+        }
+    }
+
+
 }
