@@ -382,4 +382,5 @@ export class ProductService {
             throw new Error('Error al obtener imágenes del producto');
         }
     }
+
 }
