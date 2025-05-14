@@ -162,4 +162,19 @@ router.get('/products/featured/accessories', async (req, res, next) => {
     }
 });
 
+
+// Añadir esta ruta al final del archivo, antes del export default router
+
+// Ruta para búsqueda de productos
+router.post('/products/search', async (req, res, next) => {
+    try {
+        await productController.searchProducts(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+
+
+
+
 export default router;
