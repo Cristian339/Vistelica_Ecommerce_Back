@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
 import { Subcategory } from "./Subcategory";
 import { Products } from "./Products";
+import {Style} from "./Style";
 
 @Entity({ schema: "vistelica" })
 export class Category {
@@ -19,10 +20,16 @@ export class Category {
     @Column({type: "boolean", default: false})
     discard!: boolean;
 
-    constructor(category_id: number, name: string, subcategories: Subcategory[], products: Products[]) {
+    @OneToMany(() => Style, (style) => style.category)
+    styles: Style[];
+
+
+    constructor(category_id: number, name: string, subcategories: Subcategory[], products: Products[], discard: boolean, styles: Style[]) {
         this.category_id = category_id;
         this.name = name;
         this.subcategories = subcategories;
         this.products = products;
+        this.discard = discard;
+        this.styles = styles;
     }
 }

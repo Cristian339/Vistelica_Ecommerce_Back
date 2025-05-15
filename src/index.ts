@@ -15,6 +15,7 @@ import cors from 'cors';
 import CategoryRoutes from "./Routes/CategoryRoutes";
 import colorDetectionRoutes from './Routes/colorDetectionRoutes';
 import AddressRoutes from './Routes/AddressRoutes';
+import StyleRoutes from './Routes/StyleRoutes';
 import PaymentMethodRoutes from "./Routes/PaymentMethodRoutes";
 
 
@@ -46,6 +47,7 @@ app.use('/api', SupplierRoutes);
 app.use('/api', colorDetectionRoutes);
 app.use('/api/addresses', AddressRoutes);
 app.use('/api', PaymentMethodRoutes);
+app.use('/api', StyleRoutes);
 const start = async () => {
     try {
         // Conectar a la base de datos con TypeORM

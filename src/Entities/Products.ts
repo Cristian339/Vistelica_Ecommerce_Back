@@ -13,6 +13,8 @@ import {Review} from "./Review";
 import {OrderDetail} from "./OrderDetail";
 import {Wishlist} from "./Wishlist";
 import {ProductImage} from "./ProductImage";
+import {Style} from "./Style";
+
 
 
 
@@ -108,8 +110,12 @@ export class Products {
     @Column('decimal', { precision: 5, scale: 2, nullable: true })
     discount_percentage: number | null;
 
+    @ManyToOne(() => Style, (style) => style.products)
+    @JoinColumn({ name: "style_id" })
+    style: Style;
 
-    constructor(product_id: number, name: string, description: string, price: number, stock_quantity: number, category: Category, subcategory: Subcategory, reviews: Review[], images: ProductImage[], sizes: Size[], colors: Color[], discard: boolean, created_at: Date, orderDetails: OrderDetail[], updated_at: Date, wishlists: Wishlist[], discount_percentage: number | null) {
+
+    constructor(product_id: number, name: string, description: string, price: number, stock_quantity: number, category: Category, subcategory: Subcategory, reviews: Review[], images: ProductImage[], sizes: Size[], colors: Color[], discard: boolean, created_at: Date, orderDetails: OrderDetail[], updated_at: Date, wishlists: Wishlist[], discount_percentage: number | null, style: Style) {
         this.product_id = product_id;
         this.name = name;
         this.description = description;
@@ -127,5 +133,6 @@ export class Products {
         this.updated_at = updated_at;
         this.wishlists = wishlists;
         this.discount_percentage = discount_percentage;
+        this.style = style;
     }
 }
