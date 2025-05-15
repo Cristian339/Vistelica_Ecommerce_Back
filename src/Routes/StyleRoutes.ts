@@ -50,4 +50,13 @@ router.put('/styles/:id', async (req, res, next) => {
     }
 });
 
+
+router.get('/styles/category/:categoryId', async (req, res, next) => {
+    try {
+        await styleController.getByCategoryId(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+
 export default router;

@@ -74,4 +74,11 @@ export class StyleRepository {
             relations: options.relations,
         });
     }
+
+    async findByCategoryId(categoryId: number): Promise<Style[]> {
+        return await this.repo.find({
+            where: { category: { category_id: categoryId } },
+            relations: ["products", "products.images", "styleImages"],
+        });
+    }
 }

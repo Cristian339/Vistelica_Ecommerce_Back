@@ -134,7 +134,35 @@ export class StyleController {
             });
         }
     }
+    async getByCategoryId(req: Request, res: Response): Promise<Response> {
+        try {
+            const { categoryId } = req.params;
 
+            // Log the received categoryId
+            console.log('Received categoryId:', categoryId);
+
+            // Validate and parse categoryId
+            const parsedCategoryId = Number(categoryId);
+            if (isNaN(parsedCategoryId)) {
+                return res.status(400).json({ message: "Invalid category ID" });
+            }
+
+            // Fetch styles by category ID
+            const styles = await this.styleService.getStylesByCategoryId(parsedCategoryId);
+
+            if (!styles || styles.length === 0) {
+                return res.status(404).json({ message: "No styles found for the given category" });
+            }
+
+            return res.status(200).json(styles);
+        } catch (error) {
+            console.error("Error fetching styles by category ID:", error);
+            return res.status(500).json({
+                message: "Error fetching styles by category ID",
+                error: (error as Error).message,
+            });
+        }
+    }
     async update(req: Request, res: Response): Promise<Response> {
         try {
             const style = await this.styleService.updateStyle(Number(req.params.id), req.body);
