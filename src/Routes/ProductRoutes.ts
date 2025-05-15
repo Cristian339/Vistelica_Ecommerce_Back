@@ -174,7 +174,14 @@ router.post('/products/search', async (req, res, next) => {
     }
 });
 
-
+// Ruta para búsqueda de productos
+router.post('/products/basic-info', async (req, res, next) => {
+    try {
+        await productController.getProductsWithBasicInfo(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
 
 
 export default router;

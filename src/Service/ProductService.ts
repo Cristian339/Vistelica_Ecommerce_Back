@@ -15,6 +15,7 @@ export class ProductService {
     // Crear un nuevo producto
     async createProduct(data: Partial<Products>, images: { image_url: string, is_main: boolean }[]): Promise<Products> {
         try {
+            console.log("imagenes pasadas"+images);
             const category = await this.categoryRepository.findOne({
                 where: { category_id: data.category?.category_id },
             });
@@ -35,13 +36,15 @@ export class ProductService {
             });
 
             const savedProduct = await this.productRepository.save(product);
-
+            console.log("produto guardado"+ savedProduct);
             for (const img of images) {
+                console.log("La imagen"+img);
                 const newImage = this.imageRepository.create({
                     image_url: img.image_url,
                     is_main: img.is_main,
                     product: savedProduct,
                 });
+                console.log("La imagen puesta"+newImage);
                 await this.imageRepository.save(newImage);
             }
 
@@ -388,10 +391,10 @@ export class ProductService {
     async searchProductsByNameAndCategories(
         searchText: string,
         categoryIds?: number[]
-    ): Promise<{ product_id: number; name: string }[]> {
+    ): Promise<{name: string}[]> {
         try {
             const query = this.productRepository.createQueryBuilder('product')
-                .select(['product.product_id', 'product.name'])
+                .select(['product.name'])
                 .where('product.discard = false');
 
             // Filtro por texto en el nombre
@@ -408,10 +411,62 @@ export class ProductService {
 
             query.orderBy('product.name', 'ASC');
 
-            return await query.getRawMany(); // devuelve solo los campos seleccionados
+            return await query.getRawMany();
         } catch (error) {
             console.error('Error searching products:', error);
             throw new Error('Error searching products');
+        }
+    }
+
+
+
+    async getProductsWithBasicInfo(
+        searchText?: string,
+        categoryIds?: number[]
+    ): Promise<{ product_id: number, name: string, price: number, main_image: string | null }[]> {
+        try {
+            const query = this.productRepository
+                .createQueryBuilder('product')
+                .leftJoinAndSelect(
+                    'product.images',
+                    'image',
+                    'image.is_main = :isMain',
+                    { isMain: true }
+                )
+                .select([
+                    'product.product_id',
+                    'product.name',
+                    'product.price',
+                    'image.image_url as main_image'
+                ])
+                .where('product.discard = :discard', { discard: false });
+
+            // Filtro por texto en el nombre
+            if (searchText) {
+                query.andWhere('LOWER(product.name) LIKE :searchText', {
+                    searchText: `%${searchText.toLowerCase()}%`
+                });
+            }
+
+            // Filtro por categorías si hay
+            if (categoryIds && categoryIds.length > 0) {
+                query.andWhere('product.category_id IN (:...categoryIds)', { categoryIds });
+            }
+
+            query.orderBy('product.name', 'ASC');
+
+            const rawResults = await query.getRawMany();
+
+            // Mapeamos los resultados para asegurar el formato correcto
+            return rawResults.map(row => ({
+                product_id: row.product_product_id,
+                name: row.product_name,
+                price: row.product_price,
+                main_image: row.main_image || null
+            }));
+        } catch (error) {
+            console.error('Error fetching products with basic info:', error);
+            throw new Error('Error fetching products with basic info');
         }
     }
 

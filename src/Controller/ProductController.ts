@@ -23,10 +23,11 @@ export class ProductController {
     async create(req: Request, res: Response): Promise<Response> {
         try {
             let productData: any = req.body.data ? JSON.parse(req.body.data) : req.body;
-
+            console.log(productData);
             const requiredFields = ['name', 'description', 'price', 'stock_quantity', 'category_id', 'subcategory_id',  'colors'];
             for (const field of requiredFields) {
                 if (!productData[field]) {
+                    console.log(field)
                     return res.status(400).json({ error: `Falta el campo obligatorio: ${field}` });
                 }
             }
@@ -41,7 +42,7 @@ export class ProductController {
             }
 
             const uploadedImages: { image_url: string, is_main: boolean }[] = [];
-
+            console.log(uploadedImages);
             if (req.files && Array.isArray(req.files)) {
                 for (let i = 0; i < req.files.length; i++) {
                     const file: any = req.files[i];
@@ -52,7 +53,7 @@ export class ProductController {
                     });
                 }
             }
-
+            console.log(uploadedImages);
             const product = await this.productService.createProduct({
                 name,
                 description,
@@ -462,9 +463,6 @@ export class ProductController {
         }
     }
 
-
-    // Añadir este método a la clase ProductController
-
     /**
      * Busca productos por nombre y filtra por categorías
      */
@@ -508,6 +506,47 @@ export class ProductController {
     }
 
 
+    /**
+     * Busca productos por nombre y filtra por categorías
+     */
+    async getProductsWithBasicInfo(req: Request, res: Response): Promise<Response> {
+        try {
+            const { searchText, categoryIds } = req.body;
+
+            let parsedCategoryIds: number[] | undefined;
+
+            // Verificar y parsear los IDs si están presentes
+            if (categoryIds) {
+                if (typeof categoryIds === 'string') {
+                    try {
+                        const parsed = JSON.parse(categoryIds);
+                        if (Array.isArray(parsed)) {
+                            parsedCategoryIds = parsed.map(Number).filter(id => Number.isInteger(id));
+                        }
+                    } catch (parseError) {
+                        return res.status(400).json({ message: 'Invalid categoryIds format' });
+                    }
+                } else if (Array.isArray(categoryIds)) {
+                    parsedCategoryIds = categoryIds.map(Number).filter(id => Number.isInteger(id));
+                } else {
+                    return res.status(400).json({ message: 'categoryIds must be an array or JSON string' });
+                }
+            }
+
+            const products = await this.productService.getProductsWithBasicInfo(
+                searchText,
+                parsedCategoryIds
+            );
+
+            return res.status(200).json(products);
+        } catch (error) {
+            console.error('Error searching products:', error);
+            return res.status(500).json({
+                message: 'Error searching products',
+                error: (error as Error).message
+            });
+        }
+    }
 
 
 }

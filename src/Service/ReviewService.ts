@@ -16,7 +16,7 @@ export class ReviewService {
     }
 
     //  Crear una reseña de producto
-    async createReview(userId: number, productId: number, rating: number, reviewText: string): Promise<Review> {
+    async createReview(userId: number, productId: number, rating: number, reviewText: string): Promise<Review | null> {
         try {
             const user = await this.userRepository.findOneBy({ user_id: userId });
             if (!user) throw new Error("Usuario no encontrado");
@@ -33,7 +33,7 @@ export class ReviewService {
             });
 
             if (existingReview) {
-                throw new Error("Este usuario ya comento en esta review");
+                return null;
             }
 
             const review = new Review();
