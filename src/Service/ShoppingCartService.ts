@@ -24,9 +24,11 @@ export class ShoppingCartService {
                 throw new Error("Debe proporcionarse un userId o un sessionId para crear una orden.");
             }
 
+            console.log("Sessionid" + sessionId)
+
             const order = this.orderRepository.create({
                 user: user || undefined, // Si no hay usuario, será null
-                status: "en carro",
+                status: "Carrito",
                 session_id: sessionId || undefined, // Si no hay sessionId, será null
             });
 
