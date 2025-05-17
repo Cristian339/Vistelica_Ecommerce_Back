@@ -121,5 +121,29 @@ export class StyleService {
             throw new Error('Error fetching products by style ID');
         }
     }
+    async getStylesByCategoryId(category_id: number): Promise<any[]> {
+        try {
+            const styles = await this.styleRepository.findByCategoryId(category_id);
 
+            if (!styles || styles.length === 0) {
+                console.warn(`No styles found for category ID ${category_id}.`);
+                return [];
+            }
+
+            // Map styles and their products, extracting only the main image for each product
+            return styles.map(style => ({
+                ...style,
+                products: style.products.map(product => {
+                    const mainImage = product.images?.find(img => img.is_main);
+                    return {
+                        ...product,
+                        main_image: mainImage ? mainImage.image_url : null,
+                    };
+                }),
+            }));
+        } catch (error) {
+            console.error('Error fetching styles by category ID:', error);
+            throw new Error('Error fetching styles by category ID');
+        }
+    }
 }
