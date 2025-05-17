@@ -548,5 +548,48 @@ export class ProductController {
         }
     }
 
+    async getDiscountedProductsByCategory(req: Request, res: Response): Promise<Response> {
+        try {
+            const categoryId = Number(req.params.categoryId);
+
+            if (isNaN(categoryId)) {
+                return res.status(400).json({ message: 'ID de categoría inválido' });
+            }
+
+            // Obtener productos con descuento
+            const products = await this.productRepository.findProductsWithDiscountByCategory(categoryId);
+
+            if (!products || products.length === 0) {
+                return res.status(404).json({ message: 'No se encontraron productos con descuento para esta categoría' });
+            }
+
+            // Calcular precio con descuento para cada producto
+            const productsWithDiscount = await Promise.all(products.map(async (product) => {
+                const discountedPrice = await this.productService.calculateDiscountedPrice(
+                    product.price,
+                    product.discount_percentage
+                );
+
+                return {
+                    productId: product.product_id,
+                    name: product.name,
+                    originalPrice: product.price,
+                    discountPercentage: product.discount_percentage,
+                    discountedPrice: discountedPrice.toFixed(2),
+                    images: product.images,
+                    category: product.category,
+                };
+            }));
+
+            return res.status(200).json(productsWithDiscount);
+        } catch (error) {
+            console.error('Error al obtener productos con descuento:', error);
+            return res.status(500).json({
+                message: 'Error al obtener productos con descuento',
+                error: (error as Error).message
+            });
+        }
+    }
+
 
 }

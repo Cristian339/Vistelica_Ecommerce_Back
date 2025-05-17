@@ -151,6 +151,16 @@ export class ProductRepository {
             .getRawMany();
     }
 
-
+    async findProductsWithDiscountByCategory(categoryId: number): Promise<Products[]> {
+        return this.repo
+            .createQueryBuilder("product")
+            .leftJoinAndSelect("product.images", "image")
+            .leftJoinAndSelect("product.category", "category")
+            .where("product.discount_percentage > 0")
+            .andWhere("product.category_id = :categoryId", { categoryId })
+            .orderBy("RANDOM()")
+            .limit(40)
+            .getMany();
+    }
 
 }

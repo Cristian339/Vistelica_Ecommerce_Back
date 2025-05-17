@@ -183,5 +183,12 @@ router.post('/products/basic-info', async (req, res, next) => {
     }
 });
 
-
+// Ruta para obtener productos por descuento
+router.get('/products/discount/:categoryId', async (req, res, next) => {
+    try {
+        await productController.getDiscountedProductsByCategory(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
 export default router;
