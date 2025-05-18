@@ -1,9 +1,10 @@
 import express, { Request, Response, NextFunction } from "express";
 import { OrderController } from "../Controller/OrderController";
+import { Auth } from "../Middleware/Auth";
 
 const router = express.Router();
 const orderController = new OrderController();
-
+const auth = new Auth();
 router.post("/orders", async (req: Request, res: Response, next: NextFunction) => {
     try {
         await orderController.createOrder(req, res);
@@ -53,4 +54,14 @@ router.get("/orders", async (req: Request, res: Response, next: NextFunction) =>
     }
 });
 
+// Para obtener los pedidos de un usuario
+router.get('/user-orders', (req: Request, res: Response, next: NextFunction) => {
+    auth.authenticate(req, res, next);
+}, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await orderController.getUserOrders(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
 export default router;

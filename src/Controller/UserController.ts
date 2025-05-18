@@ -6,6 +6,8 @@ import {UserService} from "../Service/UserService";
 import bcrypt from 'bcryptjs';
 import {JWTService} from "../Service/JWTService";
 import { Profile } from "../Entities/Profile";
+import {UserProfileDTO} from "../DTO/UserProfileDTO";
+import {AdditionalAddress} from "../Entities/Address";
 
 export class UserController {
     private userService: UserService = new UserService();
@@ -327,6 +329,24 @@ export class UserController {
             res.status(500).json({
                 success: false,
                 message: "Error al cerrar sesión"
+            });
+        }
+    }
+
+    public async getProfileAnAddress(req: Request, res: Response): Promise<void> {
+        try {
+            const user_id = req.user?.id;
+            if (!user_id) {
+                res.status(400).json({ message: "ID de usuario no encontrado en el token" });
+                return;
+            }
+
+            const data: UserProfileDTO = await this.userService.getProfileAndAddresses(user_id);
+            res.status(200).json(data);
+        } catch (error: any) {
+            res.status(500).json({
+                message: "Error al obtener los datos",
+                error: error.message || "Error interno del servidor"
             });
         }
     }

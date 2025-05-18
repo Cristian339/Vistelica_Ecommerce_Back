@@ -6,10 +6,13 @@ import bcrypt from 'bcryptjs';
 import {JWTService} from "./JWTService";
 import {EmailService} from "./EmailService";
 import {ShoppingCartService} from "./ShoppingCartService";
+import {AdditionalAddress} from "../Entities/Address";
+import {UserProfileDTO} from "../DTO/UserProfileDTO";
 export class UserService {
     private userRepository = AppDataSource.getRepository(User);
     private cartRepository = new ShoppingCartService();
-
+    private profileRepository = AppDataSource.getRepository(Profile);
+    private addressRepository = AppDataSource.getRepository(AdditionalAddress);
 
     async createUser(data: UserRegisterDTO): Promise<User> {
         const existingEmail = await this.userRepository.findOne({
@@ -245,7 +248,20 @@ export class UserService {
 
         return user;
     }
+    async getProfileAndAddresses(user_id: number): Promise<UserProfileDTO> {
+        const profile = await this.profileRepository.findOne({
+            where: { user: { user_id } }
+        });
+        if (!profile) {
+            throw new Error("Perfil no encontrado");
+        }
 
+        const addresses = await this.addressRepository.find({
+            where: { user_id }
+        });
+
+        return new UserProfileDTO(profile.name, profile.lastName, addresses);
+    }
 
 
 

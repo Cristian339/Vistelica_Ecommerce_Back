@@ -147,4 +147,36 @@ export class OrderController {
             });
         }
     }
+    public async getUserOrders(req: Request, res: Response): Promise<void> {
+        try {
+            // Obtener el ID de usuario del token (ya procesado por el middleware Auth)
+            const user_id = req.user?.id;
+
+            // Verificar si el ID de usuario está disponible
+            if (!user_id) {
+                res.status(400).json({
+                    success: false,
+                    message: "ID de usuario no encontrado en el token"
+                });
+                return;
+            }
+
+            // Obtener los pedidos del usuario con sus detalles
+            const userOrders = await this.orderService.getUserOrders(user_id);
+
+            // Responder con los datos obtenidos
+            res.status(200).json({
+                success: true,
+                data: userOrders
+            });
+        } catch (error: any) {
+            // Manejar errores
+            console.error("Error al obtener pedidos del usuario:", error);
+            res.status(500).json({
+                success: false,
+                message: "Error al obtener los pedidos del usuario",
+                error: error.message || "Error interno del servidor"
+            });
+        }
+    }
 }

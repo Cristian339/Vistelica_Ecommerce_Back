@@ -159,7 +159,7 @@ export class ProductRepository {
             .where("product.discount_percentage > 0")
             .andWhere("product.category_id = :categoryId", { categoryId })
             .orderBy("RANDOM()")
-            .limit(40)
+            .limit(60)
             .getMany();
     }
 

@@ -6,6 +6,10 @@ import { Products } from "../Entities/Products";
 import {User} from "../Entities/User";
 import {PaymentService} from "./PaymentService";
 import {Payment} from "../Entities/Payment";
+import {OrderDetailResponseDTO} from "../DTO/OrderDetailResponseDTO";
+import {OrderResponseDTO} from "../DTO/OrderResponseDTO";
+import {ProductImage} from "../Entities/ProductImage";
+import {UserOrdersDTO} from "../DTO/UserOrdersDTO";
 
 export class OrderService {
     private orderRepository: Repository<Order>;
@@ -13,12 +17,14 @@ export class OrderService {
     private productRepository: Repository<Products>;
     private userRepository: Repository<User>;
     private paymentService : PaymentService;
+    private productImageRepository: Repository<ProductImage>;
     constructor() {
         this.orderRepository = AppDataSource.getRepository(Order);
         this.orderDetailRepository = AppDataSource.getRepository(OrderDetail);
         this.productRepository = AppDataSource.getRepository(Products);
         this.userRepository = AppDataSource.getRepository(User);
         this.paymentService = new PaymentService();
+        this.productImageRepository = AppDataSource.getRepository(ProductImage);
     }
 
     // Crear un nuevo pedido
@@ -154,5 +160,75 @@ export class OrderService {
                 address: order.address || 'Dirección no especificada'
             }
         }));
+    }
+    async getUserOrders(user_id: number): Promise<UserOrdersDTO> {
+        // Obtener todos los pedidos del usuario
+        const orders = await this.orderRepository.find({
+            where: { user: { user_id } },
+            order: { created_at: "DESC" }
+        });
+
+        // Crear array para almacenar los pedidos procesados
+        const processedOrders: OrderResponseDTO[] = [];
+
+        // Procesar cada pedido
+        for (const order of orders) {
+            // Obtener detalles del pedido
+            const orderDetails = await this.orderDetailRepository.find({
+                where: { order: { order_id: order.order_id } },
+                relations: ["product"]
+            });
+
+            // Procesar detalles del pedido
+            const processedDetails: OrderDetailResponseDTO[] = [];
+            for (const detail of orderDetails) {
+                // Obtener la primera imagen del producto (si existe)
+                const productImage = await this.productImageRepository.findOne({
+                    where: { product: { product_id: detail.product.product_id } },
+                    order: { is_main: "DESC" }
+                });
+
+                // Obtener el producto completo para acceder al precio y descuento
+                const product = await this.productRepository.findOne({
+                    where: { product_id: detail.product.product_id }
+                });
+
+                if (!product) {
+                    continue; // Saltar si el producto no existe
+                }
+
+                // Calcular el precio final considerando el descuento
+                const originalPrice = product.price;
+                const discountPercentage = product.discount_percentage || 0;
+                const finalPrice = originalPrice * (1 - discountPercentage / 100);
+
+                // Crear DTO para detalle del pedido
+                processedDetails.push(new OrderDetailResponseDTO(
+                    detail.order_detail_id,
+                    detail.product.product_id,
+                    detail.product.name,
+                    detail.quantity,
+                    originalPrice,
+                    discountPercentage,
+                    finalPrice,
+                    detail.size,
+                    detail.color,
+                    productImage ? productImage.image_url : null
+                ));
+            }
+
+            // Crear DTO para el pedido y añadirlo al array
+            processedOrders.push(new OrderResponseDTO(
+                order.order_id,
+                order.status,
+                order.created_at,
+                order.updated_at,
+                order.address || null,
+                processedDetails
+            ));
+        }
+
+        // Retornar DTO con todos los pedidos
+        return new UserOrdersDTO(processedOrders);
     }
 }
