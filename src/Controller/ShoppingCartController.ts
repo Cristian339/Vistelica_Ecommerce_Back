@@ -37,9 +37,9 @@ export class ShoppingCartController {
 
     // Eliminar un producto del carrito
     async removeProductFromOrder(req: Request, res: Response): Promise<void> {
-        const { orderDetailId } = req.params;
+        const { itemId } = req.params;
 
-        if (!orderDetailId || isNaN(parseInt(orderDetailId))) {
+        if (!itemId || isNaN(parseInt(itemId))) {
             res.status(400).json({
                 success: false,
                 message: 'ID de detalle de pedido inválido o faltante'
@@ -48,7 +48,7 @@ export class ShoppingCartController {
         }
 
         try {
-            await this.orderDetailService.removeProductFromOrder(parseInt(orderDetailId));
+            await this.orderDetailService.removeProductFromOrder(parseInt(itemId));
             res.status(200).json({
                 success: true,
                 message: 'Producto eliminado del carrito correctamente'
@@ -99,28 +99,14 @@ export class ShoppingCartController {
 
     // Actualizar la cantidad de un producto en el carrito
     async updateOrderDetailQuantity(req: Request, res: Response): Promise<void> {
-        const { orderDetailId } = req.params;
+        const { itemId } = req.params;
         const { quantity } = req.body;
-
-        if (!orderDetailId || isNaN(parseInt(orderDetailId))) {
-            res.status(400).json({
-                success: false,
-                message: 'ID de detalle de pedido inválido o faltante'
-            });
-            return;
-        }
-
-        if (!quantity || isNaN(quantity)) {
-            res.status(400).json({
-                success: false,
-                message: 'Cantidad inválida o faltante'
-            });
-            return;
-        }
-
+        console.log(itemId);
+        console.log(quantity);
+        console.log(req.params);
         try {
             const orderDetail = await this.orderDetailService.updateOrderDetailQuantity(
-                parseInt(orderDetailId),
+                parseInt(itemId),
                 quantity
             );
 
