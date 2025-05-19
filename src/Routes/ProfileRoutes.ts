@@ -1,9 +1,10 @@
 import express, { Router, Request, Response, NextFunction } from "express";
 import { ProfileController } from "../Controller/ProfileController";
 import { Auth } from "../Middleware/Auth";
-
+import { UserController } from "../Controller/UserController";
 const router: Router = express.Router();
 const profileController = new ProfileController();
+const userController = new UserController();
 const auth = new Auth();
 
 
@@ -45,6 +46,15 @@ router.put('/profile', (req: Request, res: Response, next: NextFunction) => {
     }
 });
 
+router.get('/profile-and-addresses', (req: Request, res: Response, next: NextFunction) => {
+    auth.authenticate(req, res, next);
+}, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await userController.getProfileAnAddress(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
 
 
 
