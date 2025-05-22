@@ -10,7 +10,7 @@ export class ShoppingCartController {
 
     // Añadir un producto al carrito
     async addProductToOrder(req: Request, res: Response): Promise<void> {
-        const { orderId, productId, quantity, price } = req.body;
+        const { orderId, productId, quantity, price, size, color, discount_percentage } = req.body;
 
         if (!orderId || !productId || !quantity || !price) {
             res.status(400).json({
@@ -21,7 +21,16 @@ export class ShoppingCartController {
         }
 
         try {
-            const orderDetail = await this.orderDetailService.addProductToOrder(orderId, productId, quantity, price);
+            const orderDetail = await this.orderDetailService.addProductToOrder(
+                orderId,
+                productId,
+                quantity,
+                price,
+                size,
+                color,
+                discount_percentage || null // Asegura que sea null si no se proporciona
+            );
+
             res.status(201).json({
                 success: true,
                 message: 'Producto agregado al carrito correctamente',
@@ -30,7 +39,8 @@ export class ShoppingCartController {
         } catch (error) {
             res.status(500).json({
                 success: false,
-                message: 'Error al agregar producto al carrito'
+                message: 'Error al agregar producto al carrito',
+                error: error instanceof Error ? error.message : 'Error desconocido'
             });
         }
     }
@@ -56,7 +66,8 @@ export class ShoppingCartController {
         } catch (error) {
             res.status(500).json({
                 success: false,
-                message: 'Error al eliminar producto del carrito'
+                message: 'Error al eliminar producto del carrito',
+                error: error instanceof Error ? error.message : 'Error desconocido'
             });
         }
     }
@@ -92,7 +103,8 @@ export class ShoppingCartController {
         } catch (error) {
             res.status(500).json({
                 success: false,
-                message: 'Error al obtener los detalles del carrito'
+                message: 'Error al obtener los detalles del carrito',
+                error: error instanceof Error ? error.message : 'Error desconocido'
             });
         }
     }
@@ -101,11 +113,10 @@ export class ShoppingCartController {
     async updateOrderDetailQuantity(req: Request, res: Response): Promise<void> {
         const { itemId } = req.params;
         const { quantity } = req.body;
-        console.log(itemId);
+        console.log("ID" + itemId);
         console.log(quantity);
-        console.log(req.params);
         try {
-            const orderDetail = await this.orderDetailService.updateOrderDetailQuantity(
+            const cartDetail = await this.orderDetailService.updateOrderDetailQuantity(
                 parseInt(itemId),
                 quantity
             );
@@ -113,19 +124,19 @@ export class ShoppingCartController {
             res.status(200).json({
                 success: true,
                 message: 'Cantidad actualizada correctamente',
-                data: orderDetail
+                data: cartDetail
             });
         } catch (error) {
             res.status(500).json({
                 success: false,
-                message: 'Error al actualizar la cantidad del producto'
+                message: 'Error al actualizar la cantidad del producto',
+                error: error instanceof Error ? error.message : 'Error desconocido'
             });
         }
     }
 
-
     async getCartTotal(req: Request, res: Response): Promise<void> {
-        const { userId, sessionId } = req.query; // Cambia a query params
+        const { userId, sessionId } = req.query;
 
         try {
             if (!userId && !sessionId) {
@@ -142,15 +153,27 @@ export class ShoppingCartController {
             );
 
             res.status(200).json({
-                total: result.totalPrice,
+
+                originalTotal: result.totalPrice,
+                discountedTotal: result.discountedTotal,
+                totalSavings: result.totalSavings,
                 itemCount: result.itemCount,
-                items: result.orderDetails.map(item => ({
-                    productId: item.product?.product_id,
-                    name: item.product?.name,
-                    quantity: item.quantity,
-                    price: item.price,
-                    subtotal: (item.price || 0) * (item.quantity || 0)
-                }))
+                items: result.cartDetails.map(item => {
+                    const price = parseFloat(item.price.toString());
+                    const discount = item.discount_percentage ? parseFloat(item.discount_percentage.toString()) : 0;
+                    const discountedPrice = discount > 0 ? price * (1 - discount / 100) : price;
+
+                    return {
+                        productId: item.product?.product_id,
+                        name: item.product?.name,
+                        quantity: item.quantity,
+                        originalPrice: price,
+                        discountPercentage: discount,
+                        discountedPrice: parseFloat(discountedPrice.toFixed(2)),
+                        subtotal: parseFloat((discountedPrice * item.quantity).toFixed(2)),
+                        savings: parseFloat(((price - discountedPrice) * item.quantity).toFixed(2))
+                    }
+                })
 
             });
         } catch (error) {

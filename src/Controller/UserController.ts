@@ -68,7 +68,9 @@ export class UserController {
                 user_id: user.user_id,
                 email: user.email,
                 role: user.role,
-                profile: user.profile
+                profile: user.profile,
+                banned: user.banned,
+                ban_reason: user.ban_reason
             };
 
             return res.status(200).json(userResponse);
