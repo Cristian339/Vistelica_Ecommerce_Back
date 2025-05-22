@@ -18,6 +18,33 @@ export class ShoppingCartDetailService {
         discount_percentage: number | null = null
     ): Promise<CartDetail> {
         try {
+            // Primero verificamos si ya existe un producto igual en el carrito
+            const existingItems = await this.cartDetailRepository.find({
+                where: {
+                    cart: { cart_id: cartId },
+                    product: { product_id: productId }
+                },
+                relations: ["product"]
+            });
+
+            // Buscamos un item que coincida en talla y color
+            const existingItem = existingItems.find(item =>
+                item.size === size && item.color === color
+            );
+
+            if (existingItem) {
+                // Si encontramos un item idéntico, actualizamos la cantidad
+                existingItem.quantity += quantity;
+
+                // Si hay descuento, actualizamos también el descuento
+                if (discount_percentage !== null) {
+                    existingItem.discount_percentage = discount_percentage;
+                }
+
+                return await this.cartDetailRepository.save(existingItem);
+            }
+
+            // Si no existe un item idéntico, creamos uno nuevo
             const cart = { cart_id: cartId } as Cart;
             const product = { product_id: productId } as Products;
 
@@ -28,7 +55,7 @@ export class ShoppingCartDetailService {
                 price,
                 size,
                 color,
-                discount_percentage // Añadimos el nuevo campo
+                discount_percentage
             });
 
             return await this.cartDetailRepository.save(cartDetail);
