@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } from "typeorm";
 import { Order } from "./Order";
 
+
 @Entity({ schema: 'vistelica' })
 export class Payment {
     @PrimaryGeneratedColumn({ type: "int" })

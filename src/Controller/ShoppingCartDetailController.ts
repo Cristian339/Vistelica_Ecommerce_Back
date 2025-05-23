@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { ShoppingCartService } from '../Service/ShoppingCartService';
-import { Order } from "../Entities/Order";
+import { Cart } from "../Entities/Cart";
 // @ts-ignore
 import { v4 as uuidv4 } from 'uuid';
 
@@ -47,7 +47,7 @@ export class ShoppingCartDetailController {
         const { userId, sessionId } = req.body;
 
         try {
-            let order: Order | null;
+            let order: Cart | null;
 
             if (userId) {
                 // Usuario autenticado
@@ -110,7 +110,7 @@ export class ShoppingCartDetailController {
         const { userId, sessionId } = req.query;
 
         try {
-            let order: Order | null = null;
+            let order: Cart | null = null;
 
             if (userId) {
                 order = await this.orderService.getOrderByUserId(Number(userId));

@@ -1,13 +1,13 @@
 import { AppDataSource } from '../Config/database';
-import { Order } from '../Entities/Order';
+import { Cart } from '../Entities/Cart';
 import { User } from '../Entities/User';
-import {ShoppingCartDetailService} from "./ShoppingCartDetailService";
+import { ShoppingCartDetailService } from "./ShoppingCartDetailService";
 
 export class ShoppingCartService {
-    private orderRepository = AppDataSource.getRepository(Order);
+    private cartRepository = AppDataSource.getRepository(Cart);
     private userRepository = AppDataSource.getRepository(User);
 
-    async createOrder(userId?: number, sessionId?: string): Promise<Order | null> {
+    async createOrder(userId?: number, sessionId?: string): Promise<Cart | null> {
         try {
             let user: User | null = null;
 
@@ -24,15 +24,13 @@ export class ShoppingCartService {
                 throw new Error("Debe proporcionarse un userId o un sessionId para crear una orden.");
             }
 
-            console.log("Sessionid" + sessionId)
-
-            const order = this.orderRepository.create({
-                user: user || undefined, // Si no hay usuario, será null
+            const cart = this.cartRepository.create({
+                user: user || undefined,
                 status: "Carrito",
-                session_id: sessionId || undefined, // Si no hay sessionId, será null
+                session_id: sessionId || undefined,
             });
 
-            return await this.orderRepository.save(order);
+            return await this.cartRepository.save(cart);
 
         } catch (error) {
             console.error("Error al crear el pedido:", error);
@@ -47,35 +45,35 @@ export class ShoppingCartService {
                 throw new Error("Debe proporcionarse un userId o un sessionId para contar los productos.");
             }
 
-            let order: Order | null = null;
+            let cart: Cart | null = null;
 
             if (userId) {
                 // Buscar carrito por usuario
-                order = await this.orderRepository.findOne({
+                cart = await this.cartRepository.findOne({
                     where: {
                         user: { user_id: userId },
                         status: "Carrito"
                     },
-                    relations: ["orderDetails"]
+                    relations: ["cartDetails"]
                 });
             } else if (sessionId) {
                 // Buscar carrito por sesión
-                order = await this.orderRepository.findOne({
+                cart = await this.cartRepository.findOne({
                     where: {
                         session_id: sessionId,
                         status: "Carrito"
                     },
-                    relations: ["orderDetails"]
+                    relations: ["cartDetails"]
                 });
             }
 
             // Si no se encuentra el carrito, retornar 0
-            if (!order) {
+            if (!cart) {
                 return 0;
             }
 
             // Contar la cantidad total de items sumando las cantidades
-            const itemCount = order.orderDetails?.reduce((total, detail) => {
+            const itemCount = cart.cartDetails?.reduce((total, detail) => {
                 return total + detail.quantity;
             }, 0) || 0;
 
@@ -87,14 +85,14 @@ export class ShoppingCartService {
         }
     }
 
-    async getOrderByUserId(userId: number): Promise<Order | null> {
+    async getOrderByUserId(userId: number): Promise<Cart | null> {
         try {
-            return await this.orderRepository.findOne({
+            return await this.cartRepository.findOne({
                 where: {
                     user: { user_id: userId },
                     status: "Carrito"
                 },
-                relations: ["orderDetails", "orderDetails.product"],
+                relations: ["cartDetails", "cartDetails.product"],
             });
         } catch (error) {
             console.error('Error al obtener el pedido por ID de usuario:', error);
@@ -102,32 +100,30 @@ export class ShoppingCartService {
         }
     }
 
-    async getOrderById(orderId: number): Promise<Order | null> {
+    async getOrderById(cartId: number): Promise<Cart | null> {
         try {
-            const order = await this.orderRepository.findOne({
-                where: { order_id: orderId,
-                    status: "Carrito"
-                },
-                relations: ["user", "orderDetails"],
+            const cart = await this.cartRepository.findOne({
+                where: { cart_id: cartId, status: "Carrito" },
+                relations: ["user", "cartDetails"],
             });
-            if (!order) {
+            if (!cart) {
                 throw new Error('Pedido no encontrado');
             }
-            return order;
+            return cart;
         } catch (error) {
             console.error('Error al obtener el pedido por ID:', error);
             throw new Error('Error al obtener el pedido por ID');
         }
     }
 
-    async getOrderBySessionId(sessionId: string): Promise<Order | null> {
+    async getOrderBySessionId(sessionId: string): Promise<Cart | null> {
         try {
-            return await this.orderRepository.findOne({
+            return await this.cartRepository.findOne({
                 where: {
                     session_id: sessionId,
                     status: "Carrito"
                 },
-                relations: ["orderDetails", "orderDetails.product"],
+                relations: ["cartDetails", "cartDetails.product"],
             });
         } catch (error) {
             console.error('Error al obtener el pedido por ID de sesión:', error);
@@ -135,10 +131,10 @@ export class ShoppingCartService {
         }
     }
 
-    async associateOrderToUser(orderId: number, userId: number): Promise<Order> {
+    async associateOrderToUser(cartId: number, userId: number): Promise<Cart> {
         try {
-            const order = await this.orderRepository.findOneBy({ order_id: orderId });
-            if (!order) {
+            const cart = await this.cartRepository.findOneBy({ cart_id: cartId });
+            if (!cart) {
                 throw new Error('Pedido no encontrado');
             }
 
@@ -148,7 +144,7 @@ export class ShoppingCartService {
             }
 
             // Verificar si el usuario ya tiene un pedido en carrito
-            const existingUserOrder = await this.orderRepository.findOne({
+            const existingUserCart = await this.cartRepository.findOne({
                 where: {
                     user: { user_id: userId },
                     status: "Carrito"
@@ -157,20 +153,20 @@ export class ShoppingCartService {
 
             const shoppingCartDetailService = new ShoppingCartDetailService();
 
-            if (existingUserOrder) {
+            if (existingUserCart) {
                 // Si el usuario ya tiene un pedido, transferir los detalles
-                await shoppingCartDetailService.transferOrderDetails(orderId, existingUserOrder.order_id);
+                await shoppingCartDetailService.transferOrderDetails(cartId, existingUserCart.cart_id);
 
                 // Eliminar el pedido antiguo (el de la sesión)
-                await this.orderRepository.delete(orderId);
+                await this.cartRepository.delete(cartId);
 
                 // Retornar el pedido existente del usuario
-                return existingUserOrder;
+                return existingUserCart;
             } else {
                 // Si el usuario no tiene pedido, asociar este pedido al usuario
-                order.user = user;
-                order.session_id = null;
-                return await this.orderRepository.save(order);
+                cart.user = user;
+                cart.session_id = null;
+                return await this.cartRepository.save(cart);
             }
         } catch (error) {
             console.error('Error al asociar pedido al usuario:', error);
@@ -178,28 +174,28 @@ export class ShoppingCartService {
         }
     }
 
-    async updateOrderStatus(orderId: number, status: string): Promise<Order> {
+    async updateOrderStatus(cartId: number, status: string): Promise<Cart> {
         try {
-            const order = await this.orderRepository.findOneBy({ order_id: orderId });
-            if (!order) {
+            const cart = await this.cartRepository.findOneBy({ cart_id: cartId });
+            if (!cart) {
                 throw new Error('Pedido no encontrado');
             }
-            order.status = status;
-            return await this.orderRepository.save(order);
+            cart.status = status;
+            return await this.cartRepository.save(cart);
         } catch (error) {
             console.error('Error al actualizar el estado del pedido:', error);
             throw new Error('Error al actualizar el estado del pedido');
         }
     }
 
-    async deleteOrder(orderId: number): Promise<Order> {
+    async deleteOrder(cartId: number): Promise<Cart> {
         try {
-            const order = await this.orderRepository.findOneBy({ order_id: orderId });
-            if (!order) {
+            const cart = await this.cartRepository.findOneBy({ cart_id: cartId });
+            if (!cart) {
                 throw new Error('Pedido no encontrado');
             }
-            await this.orderRepository.delete(orderId);
-            return order;
+            await this.cartRepository.delete(cartId);
+            return cart;
         } catch (error) {
             console.error('Error al eliminar el pedido:', error);
             throw new Error('Error al eliminar el pedido');
