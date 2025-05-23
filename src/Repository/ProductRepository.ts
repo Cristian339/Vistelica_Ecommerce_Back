@@ -162,5 +162,31 @@ export class ProductRepository {
             .limit(60)
             .getMany();
     }
+    async findProductsWithLowStock(): Promise<any[]> {
+        const products = await this.repo.createQueryBuilder('product')
+            .leftJoinAndSelect('product.category', 'category')
+            .leftJoinAndSelect('product.subcategory', 'subcategory')
+            .leftJoinAndSelect('product.images', 'images')
+            .where('product.stock_quantity <= :limit', { limit: 15 })
+            .andWhere('product.stock_quantity > 0') 
+            .andWhere('product.discard = false')
+            .getMany();
+
+        return products.map((product) => {
+            const mainImage = product.images.find(img => img.is_main)?.image_url || null;
+            return {
+                product_id: product.product_id,
+                name: product.name,
+                price: product.price,
+                colors: product.colors,
+                subcategory_name: product.subcategory?.name || null,
+                main_image: mainImage,
+                discount_percentage: product.discount_percentage || 0,
+                stock_quantity: product.stock_quantity,
+            };
+        });
+    }
+
+
 
 }

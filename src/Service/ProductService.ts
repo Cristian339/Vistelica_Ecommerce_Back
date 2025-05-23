@@ -12,6 +12,7 @@ export class ProductService {
     private subcategoryRepository = AppDataSource.getRepository(Subcategory);
     private imageRepository = AppDataSource.getRepository(ProductImage);
 
+
     // Crear un nuevo producto
     async createProduct(data: Partial<Products>, images: { image_url: string, is_main: boolean }[]): Promise<Products> {
         try {

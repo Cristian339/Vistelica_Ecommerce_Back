@@ -191,4 +191,15 @@ router.get('/products/discount/:categoryId', async (req, res, next) => {
         next(error);
     }
 });
+
+// Obtener productos con bajo stock (< 15 unidades)
+router.get('/low-stock', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await productController.getLowStockProducts(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+
+
 export default router;

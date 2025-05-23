@@ -18,6 +18,7 @@ export class ProductController {
         this.update = this.update.bind(this);
         this.delete = this.delete.bind(this);
         this.getRandomFeaturedProducts = this.getRandomFeaturedProducts.bind(this);
+        this.getLowStockProducts = this.getLowStockProducts.bind(this);
     }
 
     async create(req: Request, res: Response): Promise<Response> {
@@ -591,5 +592,14 @@ export class ProductController {
         }
     }
 
+    async getLowStockProducts(req: Request, res: Response): Promise<Response> {
+        try {
+            const lowStockProducts = await this.productRepository.findProductsWithLowStock();
+            return res.status(200).json(lowStockProducts);
+        } catch (error) {
+            console.error('Error al obtener productos con poco stock:', error);
+            return res.status(500).json({ msg: 'Error al obtener productos con poco stock', error: (error as Error).message });
+        }
+    }
 
 }
