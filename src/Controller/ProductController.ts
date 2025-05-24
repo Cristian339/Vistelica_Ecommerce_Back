@@ -464,44 +464,69 @@ export class ProductController {
         }
     }
 
-    /**
-     * Busca productos por nombre y filtra por categorías
-     */
     async searchProducts(req: Request, res: Response): Promise<Response> {
         try {
             const { searchText, categoryIds } = req.body;
 
+            // Procesamiento de categoryIds
             let parsedCategoryIds: number[] | undefined;
-
-            // Verificar y parsear los IDs si están presentes
             if (categoryIds) {
-                if (typeof categoryIds === 'string') {
-                    try {
-                        const parsed = JSON.parse(categoryIds);
-                        if (Array.isArray(parsed)) {
-                            parsedCategoryIds = parsed.map(Number).filter(id => Number.isInteger(id));
-                        }
-                    } catch (parseError) {
-                        return res.status(400).json({ message: 'Invalid categoryIds format' });
-                    }
-                } else if (Array.isArray(categoryIds)) {
-                    parsedCategoryIds = categoryIds.map(Number).filter(id => Number.isInteger(id));
-                } else {
-                    return res.status(400).json({ message: 'categoryIds must be an array or JSON string' });
+                try {
+                    console.log("Entro")
+                    console.log(categoryIds)
+                    parsedCategoryIds = (Array.isArray(categoryIds)
+                        ? categoryIds.map(id => Number(id))
+                        // @ts-ignore
+                        : categoryIds.split(',').map(id => Number(id.trim())));
+                } catch (error) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Formato inválido para IDs de categoría',
+                        suggestion: 'Use números separados por comas: 1,2,3'
+                    });
                 }
             }
 
+            // Procesamiento de searchText
+            const processedSearchText = searchText?.toString().trim();
+            console.log("texto" + processedSearchText);
+            console.log("categoriad" + parsedCategoryIds);
+            // Llamada al servicio
             const products = await this.productService.searchProductsByNameAndCategories(
-                searchText,
+                processedSearchText,
                 parsedCategoryIds
             );
 
-            return res.status(200).json(products);
+            // Respuesta exitosa
+            return res.status(200).json({
+                success: true,
+                count: products.length,
+                data: products.map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    image: p.mainImage // Cambiado de mainImage a image para consistencia con el frontend
+                }))
+            });
+
         } catch (error) {
-            console.error('Error searching products:', error);
+            console.error('Error en searchProducts:', error);
+
+            // Manejo de errores específicos
+            if (error instanceof Error) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Error al buscar productos',
+                    ...(process.env.NODE_ENV === 'development' && {
+                        error: error.message,
+                        stack: error.stack
+                    })
+                });
+            }
+
+            // Error genérico
             return res.status(500).json({
-                message: 'Error searching products',
-                error: (error as Error).message
+                success: false,
+                message: 'Error interno del servidor'
             });
         }
     }

@@ -17,7 +17,7 @@ import colorDetectionRoutes from './Routes/colorDetectionRoutes';
 import AddressRoutes from './Routes/AddressRoutes';
 import StyleRoutes from './Routes/StyleRoutes';
 import PaymentMethodRoutes from "./Routes/PaymentMethodRoutes";
-
+import { AdminService } from './Service/AdminService';
 
 dotenv.config();
 const app = express();
@@ -29,6 +29,23 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+const initializeBanScheduler = async () => {
+    const adminService = new AdminService();
+
+    // Verificar baneos expirados al iniciar
+    await adminService.checkExpiredBans();
+
+    // Programar verificación periódica cada 6 horas
+    const CHECK_INTERVAL = 6 * 60 * 60 * 1000; // 6 horas
+    setInterval(() => {
+        adminService.checkExpiredBans();
+    }, CHECK_INTERVAL);
+
+    console.log('Ban scheduler initialized');
+};
+
+
 
 // Middlewares esenciales
 app.use(express.json());
@@ -53,6 +70,9 @@ const start = async () => {
         // Conectar a la base de datos con TypeORM
         await AppDataSource.initialize();
         console.log('Database connected successfully');
+
+        // Inicializar el scheduler de baneos
+        await initializeBanScheduler();
 
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
