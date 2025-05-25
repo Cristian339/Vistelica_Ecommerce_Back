@@ -299,13 +299,13 @@ export class UserService {
             if (user.orders && user.orders.length > 0) {
                 for (const order of user.orders) {
                     // Eliminar payment primero si existe
-                    if (order.payment) {
-                        await queryRunner.manager.remove(order.payment);
+                    if (order.payments) {
+                        await queryRunner.manager.remove(order.payments);
                     }
 
                     // Eliminar order details
-                    if (order.orderDetails && order.orderDetails.length > 0) {
-                        await queryRunner.manager.remove(order.orderDetails);
+                    if (order.details && order.details.length > 0) {
+                        await queryRunner.manager.remove(order.details);
                     }
 
                     // Finalmente eliminar la orden
