@@ -40,24 +40,18 @@ export class ShoppingCartService {
 
     async countCartItems(userId?: number, sessionId?: string): Promise<number> {
         try {
-            // Validar que al menos uno de los dos valores esté presente
-            if (!userId && !sessionId) {
-                throw new Error("Debe proporcionarse un userId o un sessionId para contar los productos.");
-            }
-
             let cart: Cart | null = null;
 
+            // Buscar el carrito activo según userId o sessionId
             if (userId) {
-                // Buscar carrito por usuario
                 cart = await this.cartRepository.findOne({
                     where: {
                         user: { user_id: userId },
-                        status: "Carrito"
+                        status: "Carrito" // Asumiendo que "Carrito" es el estado activo
                     },
-                    relations: ["cartDetails"]
+                    relations: ["cartDetails"] // Cargar los detalles del carrito
                 });
             } else if (sessionId) {
-                // Buscar carrito por sesión
                 cart = await this.cartRepository.findOne({
                     where: {
                         session_id: sessionId,
@@ -67,17 +61,17 @@ export class ShoppingCartService {
                 });
             }
 
-            // Si no se encuentra el carrito, retornar 0
-            if (!cart) {
+            // Si no hay carrito o no tiene items, retornar 0
+            if (!cart || !cart.cartDetails) {
                 return 0;
             }
 
-            // Contar la cantidad total de items sumando las cantidades
-            const itemCount = cart.cartDetails?.reduce((total, detail) => {
+            // Sumar todas las cantidades (quantity) de los productos en el carrito
+            const totalItems = cart.cartDetails.reduce((total, detail) => {
                 return total + detail.quantity;
-            }, 0) || 0;
+            }, 0);
 
-            return itemCount;
+            return totalItems;
 
         } catch (error) {
             console.error('Error al contar productos del carrito:', error);

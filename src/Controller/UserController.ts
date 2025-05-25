@@ -352,4 +352,42 @@ export class UserController {
             });
         }
     }
+
+
+    /**
+     * Elimina completamente un usuario y todos sus datos relacionados
+     */
+    async deleteUser(req: Request, res: Response): Promise<Response> {
+        try {
+            const token = req.headers.authorization;
+            if (!token) {
+                return res.status(401).json({ message: 'Token no proporcionado' });
+            }
+
+            const { password } = req.body;
+            if (!password) {
+                return res.status(400).json({ message: 'La contraseña es requerida' });
+            }
+
+            const user = await this.userService.getUserFromToken(token);
+            await this.userService.verifyPassword(user, password);
+            await this.userService.deleteUserCompletely(user.user_id);
+
+            return res.status(200).json({
+                success: true,
+                message: 'Cuenta eliminada permanentemente'
+            });
+        } catch (error) {
+            if (error instanceof Error) {
+                return res.status(400).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+            return res.status(500).json({
+                success: false,
+                message: 'Error al eliminar el usuario'
+            });
+        }
+    }
 }
