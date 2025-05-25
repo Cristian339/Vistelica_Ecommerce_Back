@@ -58,6 +58,15 @@ router.get('/admin/clients', cors(corsOptions), async (req: Request, res: Respon
     }
 });
 
+
+router.post('/admin/temp-ban/:userId', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await adminController.tempBanUser(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
+
 // Listar vendedores
 router.get('/admin/sellers', async (req: Request, res: Response, next: NextFunction) => {
     try {

@@ -390,29 +390,43 @@ export class ProductService {
 
 
     async searchProductsByNameAndCategories(
-        searchText: string,
-        categoryIds?: number[]
-    ): Promise<{name: string}[]> {
+        searchText: string | undefined,
+        categoryIds?: number[] | undefined
+    ): Promise<{ id: number; name: string; mainImage: string | null }[]> {
         try {
+            // Construimos la consulta base
             const query = this.productRepository.createQueryBuilder('product')
-                .select(['product.name'])
+                .select(['product.product_id', 'product.name'])
                 .where('product.discard = false');
 
-            // Filtro por texto en el nombre
+            // Aplicamos filtros según los parámetros
             if (searchText) {
                 query.andWhere('LOWER(product.name) LIKE :searchText', {
                     searchText: `%${searchText.toLowerCase()}%`
                 });
             }
 
-            // Filtro por categorías si hay
             if (categoryIds && categoryIds.length > 0) {
                 query.andWhere('product.category_id IN (:...categoryIds)', { categoryIds });
             }
 
+            // Ordenamos y obtenemos los resultados
             query.orderBy('product.name', 'ASC');
+            const products = await query.getMany();
 
-            return await query.getRawMany();
+            // Obtenemos las imágenes principales para cada producto
+            const productsWithImages = await Promise.all(
+                products.map(async (product) => {
+                    const mainImage = await this.getMainImageByProductId(product.product_id);
+                    return {
+                        id: product.product_id,
+                        name: product.name,
+                        mainImage: mainImage?.image_url || null
+                    };
+                })
+            );
+
+            return productsWithImages;
         } catch (error) {
             console.error('Error searching products:', error);
             throw new Error('Error searching products');
