@@ -98,8 +98,6 @@ export class Products {
     @CreateDateColumn()
     created_at: Date;
 
-    @OneToMany(() => OrderDetail, orderDetail => orderDetail.product)
-    orderDetails?: OrderDetail[];
 
     @UpdateDateColumn()
     updated_at: Date;
@@ -129,7 +127,7 @@ export class Products {
         this.colors = colors;
         this.discard = discard;
         this.created_at = created_at;
-        this.orderDetails = orderDetails;
+
         this.updated_at = updated_at;
         this.wishlists = wishlists;
         this.discount_percentage = discount_percentage;

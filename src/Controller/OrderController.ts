@@ -1,182 +1,230 @@
- import { Request, Response } from "express";
-import { OrderService } from "../Service/OrderService";
+import { Request, Response } from "express";
 import { AppDataSource } from "../Config/database";
-import { User } from "../Entities/User";
+import { Order, OrderStatus } from "../Entities/Order";
+import { OrderDetail } from "../Entities/OrderDetail";
+import { AdditionalAddress } from "../Entities/Address";
 import { Products } from "../Entities/Products";
-import {Repository} from "typeorm";
-import {Order} from "../Entities/Order";
-import {OrderDetail} from "../Entities/OrderDetail";
+import { Payment } from "../Entities/Payment";
+import {CartDetail} from "../Entities/CartDetail";
+import {Cart} from "../Entities/Cart";
 
 export class OrderController {
-    private orderService: OrderService;
-    private orderRepository: Repository<Order>;
-    private orderDetailRepository: Repository<OrderDetail>;
-
-    constructor() {
-        this.orderService = new OrderService();
-        this.orderRepository = AppDataSource.getRepository(Order);
-        this.orderDetailRepository = AppDataSource.getRepository(OrderDetail);
-    }
-
-    // Crear un pedido
-    async createOrder(req: Request, res: Response): Promise<Response> {
+    private orderRepository = AppDataSource.getRepository(Order);
+    private orderDetailRepository = AppDataSource.getRepository(OrderDetail);
+    private addressRepository = AppDataSource.getRepository(AdditionalAddress);
+    private productRepository = AppDataSource.getRepository(Products);
+    private paymentRepository = AppDataSource.getRepository(Payment);
+    private cartDetailRepository = AppDataSource.getRepository(CartDetail);
+    private cartRepository = AppDataSource.getRepository(Cart);
+    // Crear pedido
+    async createOrder(req: Request, res: Response) {
         try {
-            const { userId, products } = req.body;
-
-            // Validar usuario
-            const user = await AppDataSource.getRepository(User).findOneBy({ user_id: userId });
-            if (!user) return res.status(404).json({ message: "User not found" });
-
-            // Validar productos y obtener entidades
-            const productEntities = await Promise.all(
-                products.map(async (item: any) => {
-                    const product = await AppDataSource.getRepository(Products).findOneBy({ product_id: item.productId });
-                    if (!product) throw new Error(`Product with ID ${item.productId} not found`);
-                    return { product_id: product.product_id, quantity: item.quantity, price: item.price };
-                })
-            );
-
-            // Crear pedido usando el servicio
-            const order = await this.orderService.createOrder(userId, productEntities);
-
-            return res.status(201).json(order);
-        }catch (error) {
-            if (error instanceof Error) {
-                return res.status(500).json({ message: "Error creando pedido", error: error.message });
-            }
-            return res.status(500).json({ message: "Error creando pedido", error: "Unknown error" });
-        }
-    }
-
-    // Obtener pedidos de un usuario
-    async getOrdersByUser(req: Request, res: Response): Promise<Response> {
-        try {
-            const userId = Number(req.params.userId);
-            if (isNaN(userId)) return res.status(400).json({ message: "Invalid user ID" });
-
-            const orders = await this.orderService.getOrdersByUser(userId);
-            return res.status(200).json(orders);
-        } catch (error) {
-            if (error instanceof Error) {
-                return res.status(500).json({ message: "Error obteniendo pedido", error: error.message });
-            }
-            return res.status(500).json({ message: "Error obteniendo pedido", error: "Unknown error" });
-        }
-    }
-
-    // Obtener detalles de un pedido
-    async getOrderDetails(req: Request, res: Response): Promise<Response> {
-        try {
-            const orderId = Number(req.params.orderId);
-            if (isNaN(orderId)) return res.status(400).json({ message: "Invalid order ID" });
-
-            const orderDetails = await this.orderService.getOrderDetails(orderId);
-            return res.status(200).json(orderDetails);
-        }catch (error) {
-            if (error instanceof Error) {
-                return res.status(500).json({ message: "Error obteniendo pedido", error: error.message });
-            }
-            return res.status(500).json({ message: "Error obteniendo pedido", error: "Unknown error" });
-        }
-    }
-
-    // Actualizar estado de un pedido
-    async updateOrderStatus(req: Request, res: Response): Promise<Response> {
-        try {
-            const { status } = req.body;
-            const orderId = Number(req.params.orderId);
-
-            if (isNaN(orderId)) return res.status(400).json({ message: "Invalid order ID" });
-
-            const validStatuses = ["productos en curso", "suspender pedido", "productos completados"];
-            if (!validStatuses.includes(status)) {
-                return res.status(400).json({ message: `Invalid status. Valid statuses: ${validStatuses.join(", ")}` });
+            const userId = Number(req.user?.id);
+            if (!userId) {
+                return res.status(401).json({ message: "Unauthorized" });
             }
 
-            await this.orderService.updateOrderStatus(orderId, status);
+            const {
+                address_id,
+                payment_method_id,
+                payment_method_name,
+                details
+            } = req.body;
 
-            return res.status(200).json({ message: "Order status updated successfully" });
-        }catch (error) {
-            if (error instanceof Error) {
-                return res.status(500).json({ message: "Error actualizado pedido", error: error.message });
+            if (!address_id || !details || !Array.isArray(details) || details.length === 0) {
+                return res.status(400).json({ message: "Datos incompletos para crear el pedido." });
             }
-            return res.status(500).json({ message: "Error actualizado pedido", error: "Unknown error" });
-        }
-    }
 
-    // Cancelar un pedido
-    async cancelOrder(req: Request, res: Response): Promise<Response> {
-        try {
-            const orderId = Number(req.params.orderId);
-            if (isNaN(orderId)) return res.status(400).json({ message: "Invalid order ID" });
-
-            // Obtener detalles del pedido
-            const order = await this.orderService.getOrderDetails(orderId);
-            if (!order) return res.status(404).json({ message: "Order not found" });
-
-            // Eliminar los detalles del pedido
-            await this.orderDetailRepository.delete({ order: { order_id: orderId } });
-
-            // Eliminar el pedido
-            await this.orderRepository.delete(orderId);
-
-            return res.status(200).json({ message: "El pedido fue exitosamente cancelado" });
-        } catch (error) {
-            if (error instanceof Error) {
-                return res.status(500).json({ message: "Error eliminando pedido", error: error.message });
-            }
-            return res.status(500).json({ message: "Error eliminando pedido", error: "Unknown error" });
-        }
-    }
-
-    // Obtener todos los pedidos con información del cliente (versión con find)
-    async getAllOrdersWithClientInfo(req: Request, res: Response): Promise<Response> {
-        try {
-            const orders = await this.orderService.getAllOrdersWithClientInfo();
-            return res.status(200).json(orders);
-        } catch (error) {
-            if (error instanceof Error) {
-                return res.status(500).json({
-                    message: "Error obteniendo todos los pedidos",
-                    error: error.message
-                });
-            }
-            return res.status(500).json({
-                message: "Error obteniendo todos los pedidos",
-                error: "Unknown error"
+            const address = await this.addressRepository.findOne({
+                where: { id: address_id, user_id: userId }
             });
-        }
-    }
-    public async getUserOrders(req: Request, res: Response): Promise<void> {
-        try {
-            // Obtener el ID de usuario del token (ya procesado por el middleware Auth)
-            const user_id = req.user?.id;
-
-            // Verificar si el ID de usuario está disponible
-            if (!user_id) {
-                res.status(400).json({
-                    success: false,
-                    message: "ID de usuario no encontrado en el token"
-                });
-                return;
+            if (!address) {
+                return res.status(404).json({ message: "Dirección no encontrada o no pertenece al usuario." });
             }
 
-            // Obtener los pedidos del usuario con sus detalles
-            const userOrders = await this.orderService.getUserOrders(user_id);
+            // Calcular total_price sin envío
+            let total_price = 0;
+            for (const item of details) {
+                total_price += Number(item.price) * Number(item.quantity);
+            }
 
-            // Responder con los datos obtenidos
-            res.status(200).json({
-                success: true,
-                data: userOrders
+            // Añadir coste de envío si total_price <= 50
+            const shippingCost = total_price > 50 ? 0 : 5;
+            const finalTotal = total_price + shippingCost;
+
+            // Calcular fecha estimada de entrega (3 días después de hoy)
+            const estimatedDeliveryDate = new Date();
+            estimatedDeliveryDate.setDate(estimatedDeliveryDate.getDate() + 3);
+
+
+            // Crear la orden
+            const order = new Order();
+            order.user = { user_id: userId } as any;
+            order.address = address;
+            order.payment_method_id = 0;
+            order.payment_method_name = payment_method_name || null;
+            order.status = OrderStatus.ALMACEN;
+            order.total_price = finalTotal;
+            order.estimated_delivery_date = estimatedDeliveryDate;
+
+            order.details = [];
+            for (const item of details) {
+                const product = await this.productRepository.findOneBy({ product_id: item.product_id });
+                if (!product) {
+                    return res.status(404).json({ message: `Producto con id ${item.product_id} no encontrado.` });
+                }
+                const detail = new OrderDetail();
+                detail.product = product;
+                detail.price = item.price;
+                detail.quantity = item.quantity;
+                detail.size = item.size || null;
+                detail.color = item.color || null;
+                order.details.push(detail);
+            }
+            // Generar número de pedido legible
+            const now = new Date();
+            const datePart = now.toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
+            const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase(); // 6 caracteres aleatorios
+            order.order_number = `ORD-${datePart}-${randomPart}`;
+
+            // Guardar pedido con detalles
+            const savedOrder = await this.orderRepository.save(order);
+
+            // Crear pago asociado
+            const payment = new Payment();
+            payment.order = savedOrder;
+            payment.payment_method = payment_method_name || 'No especificado';
+            payment.payment_status = 'COMPLETADO';
+            payment.amount = finalTotal;
+
+            const savedPayment = await this.paymentRepository.save(payment);
+
+            // Actualizar el payment_method_id del pedido con el id del pago creado
+            savedOrder.payment_method_id = savedPayment.payment_id;
+            await this.orderRepository.save(savedOrder);
+
+            return res.status(201).json({ message: "Pedido y pago creados correctamente", order: savedOrder, payment: savedPayment });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ message: "Error interno del servidor" });
+        }
+    }
+
+
+    // Actualizar método de pago en el pedido
+    async updatePaymentMethod(orderId: number, paymentMethodId: number) {
+        const order = await this.orderRepository.findOneBy({ order_id: orderId });
+        if (!order) throw new Error(`Pedido con id ${orderId} no encontrado`);
+
+        order.payment_method_id = paymentMethodId;
+        await this.orderRepository.save(order);
+    }
+    async getOrdersByUser(req: Request, res: Response) {
+        try {
+            const userId = Number(req.user?.id);
+            if (!userId) {
+                return res.status(401).json({ message: "No autorizado" });
+            }
+
+            const orders = await this.orderRepository.find({
+                where: { user: { user_id: userId } },
+                relations: ['address', 'details', 'details.product'], // solo incluye lo necesario
+                order: { created_at: "DESC" }
             });
-        } catch (error: any) {
-            // Manejar errores
+
+            // Eliminar el campo "user" de cada pedido
+            const sanitizedOrders = orders.map(order => {
+                const { user, ...rest } = order;
+                return rest;
+            });
+
+            return res.status(200).json({ orders: sanitizedOrders });
+        } catch (error) {
             console.error("Error al obtener pedidos del usuario:", error);
-            res.status(500).json({
-                success: false,
-                message: "Error al obtener los pedidos del usuario",
-                error: error.message || "Error interno del servidor"
-            });
+            return res.status(500).json({ message: "Error interno del servidor" });
         }
     }
+
+    async getOrderDetailsById(req: Request, res: Response) {
+        try {
+            const userId = Number(req.user?.id);
+            const orderId = Number(req.params.id); // <-- aquí corriges el nombre del parámetro
+
+            console.log("🧾 Verificando pedido", { userId, orderId });
+
+            if (!userId) {
+                return res.status(401).json({ message: "No autorizado" });
+            }
+
+            if (isNaN(orderId)) {
+                return res.status(400).json({ message: "ID de pedido no válido" });
+            }
+
+            const order = await this.orderRepository.findOne({
+                where: {
+                    order_id: orderId,
+                    user: { user_id: userId }
+                },
+                relations: ["details", "details.product", "address", "payments"]
+            });
+
+            if (!order) {
+                return res.status(404).json({ message: "Pedido no encontrado o no pertenece al usuario." });
+            }
+            // Limpiar información sensible de un usuario
+            if ((order as any).user) {
+                delete (order as any).user;
+            }
+
+            return res.status(200).json({ order });
+        } catch (error) {
+            console.error("❌ Error al obtener detalles del pedido:", error);
+            return res.status(500).json({ message: "Error interno del servidor" });
+        }
+    }
+
+    async markOrderAsShipped(req: Request, res: Response) {
+        try {
+            const orderId = Number(req.params.id);
+            if (isNaN(orderId)) {
+                return res.status(400).json({ message: "ID de pedido no válido" });
+            }
+
+            const order = await this.orderRepository.findOneBy({ order_id: orderId });
+            if (!order) {
+                return res.status(404).json({ message: "Pedido no encontrado" });
+            }
+
+            order.status = OrderStatus.ENVIADO;
+            await this.orderRepository.save(order);
+
+            return res.status(200).json({ message: "Pedido marcado como ENVIADO" });
+        } catch (error) {
+            console.error("❌ Error al marcar como enviado:", error);
+            return res.status(500).json({ message: "Error interno del servidor" });
+        }
+    }
+    async markOrderAsDelivered(req: Request, res: Response) {
+        try {
+            const orderId = Number(req.params.id);
+            if (isNaN(orderId)) {
+                return res.status(400).json({ message: "ID de pedido no válido" });
+            }
+
+            const order = await this.orderRepository.findOneBy({ order_id: orderId });
+            if (!order) {
+                return res.status(404).json({ message: "Pedido no encontrado" });
+            }
+
+            order.status = OrderStatus.ENTREGADO;
+            order.delivered_at = new Date();
+            await this.orderRepository.save(order);
+
+            return res.status(200).json({ message: "Pedido marcado como ENTREGADO y fecha registrada" });
+        } catch (error) {
+            console.error("❌ Error al marcar como entregado:", error);
+            return res.status(500).json({ message: "Error interno del servidor" });
+        }
+    }
+
 }

@@ -44,8 +44,10 @@ export class User {
     @OneToMany(() => Wishlist, (wishlist) => wishlist.user)
     wishlists: Wishlist[];
 
-    @OneToMany(() => Order, order => order.user)
-    orders?: Order[];
+    @OneToMany(() => Order, (order) => order.user)
+    @JoinColumn({ name: "order_id" })
+    orders: Order[];
+
 
     @OneToMany(() => AdditionalAddress, address => address.user)
     additional_addresses?: AdditionalAddress[];
@@ -78,9 +80,8 @@ export class User {
         this.profile = profile;
         this.reviews = reviews;
         this.wishlists = wishlists;
-        this.orders = orders;
         this.additional_addresses = additional_addresses;
-
+        this.orders = orders;
         if (payment_methods) {
             this.payment_methods = payment_methods;
         }

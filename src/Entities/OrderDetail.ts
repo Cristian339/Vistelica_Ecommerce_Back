@@ -1,37 +1,31 @@
-import {Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn} from "typeorm";
+import {
+    Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn
+} from "typeorm";
 import { Order } from "./Order";
-import { Products } from "./Products";
+import { Products, Size, Color } from "./Products";
 
 @Entity({ schema: 'vistelica' })
 export class OrderDetail {
-    @PrimaryGeneratedColumn({ type: "int" })
+    @PrimaryGeneratedColumn()
     order_detail_id!: number;
 
-    @ManyToOne(() => Order)
+    @ManyToOne(() => Order, order => order.details, { onDelete: "CASCADE" })
     @JoinColumn({ name: "order_id" })
     order!: Order;
 
-    @ManyToOne(() => Products)
+    @ManyToOne(() => Products, { eager: true })
     @JoinColumn({ name: "product_id" })
     product!: Products;
 
-    @Column("int")
-    quantity!: number;
-
     @Column("decimal", { precision: 10, scale: 2 })
-    price!: number;
+    price!: number; // precio final aplicado en el momento del pedido
 
-    @Column({
-        type: "enum",
-        enum: ["XS", "S", "M", "L", "XL", "XXL", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40"],
-        nullable: true
-    })
-    size!: string | null;
+    @Column({ type: "enum", enum: Size, nullable: true })
+    size!: Size;
 
-    @Column({
-        type: "enum",
-        enum: ["RED", "BLACK", "WHITE", "BLUE", "GREEN", "YELLOW", "ORANGE", "PURPLE", "BROWN", "GRAY", "PINK", "BEIGE", "GOLD", "SILVER", "NAVY"],
-        nullable: true
-    })
-    color!: string | null;
+    @Column({ type: "enum", enum: Color, nullable: true })
+    color!: Color;
+
+    @Column({ type: "int", default: 1 })
+    quantity!: number;
 }

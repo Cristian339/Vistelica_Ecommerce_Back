@@ -1,7 +1,7 @@
 import { Repository } from "typeorm";
 import { Order } from "../Entities/Order";
 
-export class ShoppingCartRepository extends Repository<Order> {
+export class CartRepository extends Repository<Order> {
     // Crear un nuevo pedido (carrito)
     async createOrder(userId: number): Promise<Order> {
         const order = this.create({ user: { user_id: userId }, status: "en proceso" });

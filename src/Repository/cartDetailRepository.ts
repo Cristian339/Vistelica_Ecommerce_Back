@@ -2,7 +2,7 @@ import { Repository } from "typeorm";
 import { OrderDetail } from "../Entities/OrderDetail";
 import { Products } from "../Entities/Products";
 
-export class ShoppingCartDetailRepository extends Repository<OrderDetail> {
+export class CartDetailRepository extends Repository<OrderDetail> {
     // Añadir un producto al carrito
     async addProductToOrder(orderId: number, productId: number, quantity: number, price: number): Promise<OrderDetail> {
         const orderDetail = this.create({

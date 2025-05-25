@@ -1,234 +1,76 @@
-import { Order } from "../Entities/Order";
-import { OrderDetail } from "../Entities/OrderDetail";
-import { Repository } from "typeorm";
-import { AppDataSource } from "../Config/database";
-import { Products } from "../Entities/Products";
-import {User} from "../Entities/User";
-import {PaymentService} from "./PaymentService";
-import {Payment} from "../Entities/Payment";
-import {OrderDetailResponseDTO} from "../DTO/OrderDetailResponseDTO";
-import {OrderResponseDTO} from "../DTO/OrderResponseDTO";
-import {ProductImage} from "../Entities/ProductImage";
-import {UserOrdersDTO} from "../DTO/UserOrdersDTO";
+import { DataSource } from "typeorm";
+import { Order, OrderStatus } from "../entities/Order";
+import { OrderDetail } from "../entities/OrderDetail";
+import { AdditionalAddress } from "../entities/Address";
+import { User } from "../entities/User";
+
+interface CreateOrderDTO {
+    user_id: number;
+    address_id: number;
+    payment_method_id?: number;
+    payment_method_name?: string;
+    details: {
+        product_id: number;
+        quantity: number;
+        price: number;
+        size?: string | null;
+        color?: string | null;
+    }[];
+}
 
 export class OrderService {
-    private orderRepository: Repository<Order>;
-    private orderDetailRepository: Repository<OrderDetail>;
-    private productRepository: Repository<Products>;
-    private userRepository: Repository<User>;
-    private paymentService : PaymentService;
-    private productImageRepository: Repository<ProductImage>;
-    constructor() {
-        this.orderRepository = AppDataSource.getRepository(Order);
-        this.orderDetailRepository = AppDataSource.getRepository(OrderDetail);
-        this.productRepository = AppDataSource.getRepository(Products);
-        this.userRepository = AppDataSource.getRepository(User);
-        this.paymentService = new PaymentService();
-        this.productImageRepository = AppDataSource.getRepository(ProductImage);
+    private dataSource: DataSource;
+
+    constructor(dataSource: DataSource) {
+        this.dataSource = dataSource;
     }
 
-    // Crear un nuevo pedido
-    async createOrder(userId: number, products: { product_id: number; quantity: number; price: number }[]): Promise<Order> {
-        // Obtener al usuario desde la base de datos
-        const user = await this.userRepository.findOne({ where: { user_id: userId } });
+    async createOrder(dto: CreateOrderDTO): Promise<Order> {
+        const userRepo = this.dataSource.getRepository(User);
+        const addressRepo = this.dataSource.getRepository(AdditionalAddress);
+        const orderRepo = this.dataSource.getRepository(Order);
+        const productRepo = this.dataSource.getRepository("Products"); // asumiendo existe
+
+        // Buscar usuario y dirección
+        const user = await userRepo.findOneBy({ id: dto.user_id });
         if (!user) throw new Error("User not found");
 
-        // Crear el pedido
-        const order = this.orderRepository.create({
-            user, // Asociamos el usuario completo
-            status: "productos en curso", // Estado inicial del pedido
-        });
+        const address = await addressRepo.findOneBy({ id: dto.address_id });
+        if (!address) throw new Error("Address not found");
 
-        // Guardar el pedido
-        const newOrder = await this.orderRepository.save(order);
+        // Crear pedido
+        const order = new Order();
+        order.user = user;
+        order.address = address;
+        order.payment_method_id = dto.payment_method_id || null;
+        order.payment_method_name = dto.payment_method_name || null;
+        order.status = OrderStatus.ALMACEN;
 
-        // Agregar los detalles del pedido
-        for (const item of products) {
-            const product = await this.productRepository.findOne({ where: { product_id: item.product_id } });
-            if (!product) throw new Error(`Product with ID ${item.product_id} not found`);
+        // Crear detalles y calcular total
+        const details: OrderDetail[] = [];
+        let total = 0;
 
-            // Crear un detalle del pedido para cada producto
-            const orderDetail = this.orderDetailRepository.create({
-                order: newOrder, // Relación con el pedido
-                product, // Relación con el producto
-                quantity: item.quantity,
-                price: item.price,
-            });
+        for (const item of dto.details) {
+            const detail = new OrderDetail();
+            detail.product = await productRepo.findOneBy({ product_id: item.product_id });
+            if (!detail.product) throw new Error(`Product ${item.product_id} not found`);
 
-            // Guardar el detalle del pedido
-            await this.orderDetailRepository.save(orderDetail);
+            detail.quantity = item.quantity;
+            detail.price = item.price;
+            detail.size = item.size || null;
+            detail.color = item.color || null;
+
+            total += detail.price * detail.quantity;
+            details.push(detail);
         }
 
-        // Devolver el pedido con los detalles
-        return newOrder;
-    }
+        order.details = details;
+        order.total_price = total;
 
+        // Calcular gastos de envío
+        order.shipping_cost = total > 50 ? 0 : 5;
 
-    // Obtener los pedidos de un usuario
-    async getOrdersByUser(userId: number): Promise<Order[]> {
-        return await this.orderRepository.find({
-            where: { user: { user_id: userId } },
-            relations: ["user"],
-        });
-    }
-
-    // Obtener los detalles de un pedido
-    async getOrderDetails(orderId: number): Promise<{
-        order_id: number;
-        status: string;
-        payment_method?: string;
-        details: Array<{
-            product_id: number;
-            product_name: string;
-            quantity: number;
-            price: number;
-        }>;
-    }> {
-        const orderDetails = await this.orderDetailRepository.find({
-            where: { order: { order_id: orderId } },
-            relations: ["product", "order"],
-        });
-
-        if (orderDetails.length === 0) {
-            throw new Error(`Order with ID ${orderId} not found`);
-        }
-
-        const order = orderDetails[0].order;
-        const payment = order.payment ? await this.paymentService.getPaymentById(order.payment) : null;
-
-        return {
-            order_id: order.order_id,
-            status: order.status,
-            payment_method: payment?.payment_method,
-            details: orderDetails.map(detail => ({
-                product_id: detail.product.product_id,
-                product_name: detail.product.name,
-                quantity: detail.quantity,
-                price: detail.price,
-            })),
-        };
-    }
-
-
-    // Actualizar estado del pedido
-    async updateOrderStatus(orderId: number, status: string): Promise<void> {
-        await this.orderRepository.update(orderId, { status });
-    }
-
-    // Cancelar un pedido
-    async cancelOrder(orderId: number): Promise<void> {
-        await this.orderRepository.delete(orderId);
-    }
-
-
-    async getAllOrdersWithClientInfo(): Promise<Array<{
-        order_id: number;
-        created_at: Date;
-        status: string;
-        client: {
-            name: string;
-            email: string;
-            address: string;
-        };
-    }>> {
-
-        const orders = await this.orderRepository.find({
-            relations: ["user", "user.profile"],
-            order: { created_at: "DESC" },
-            select: {
-                order_id: true,
-                created_at: true,
-                status: true,
-                address: true,
-                user: {
-                    user_id: true,
-                    email: true,
-                    profile: {
-                        name: true
-                    }
-                }
-            }
-        });
-
-        return orders.map(order => ({
-            order_id: order.order_id,
-            created_at: order.created_at,
-            status: order.status,
-            client: {
-                name: order.user?.profile?.name || 'Nombre no disponible',
-                email: order.user?.email || 'Email no disponible',
-                address: order.address || 'Dirección no especificada'
-            }
-        }));
-    }
-    async getUserOrders(user_id: number): Promise<UserOrdersDTO> {
-        // Obtener todos los pedidos del usuario
-        const orders = await this.orderRepository.find({
-            where: { user: { user_id } },
-            order: { created_at: "DESC" }
-        });
-
-        // Crear array para almacenar los pedidos procesados
-        const processedOrders: OrderResponseDTO[] = [];
-
-        // Procesar cada pedido
-        for (const order of orders) {
-            // Obtener detalles del pedido
-            const orderDetails = await this.orderDetailRepository.find({
-                where: { order: { order_id: order.order_id } },
-                relations: ["product"]
-            });
-
-            // Procesar detalles del pedido
-            const processedDetails: OrderDetailResponseDTO[] = [];
-            for (const detail of orderDetails) {
-                // Obtener la primera imagen del producto (si existe)
-                const productImage = await this.productImageRepository.findOne({
-                    where: { product: { product_id: detail.product.product_id } },
-                    order: { is_main: "DESC" }
-                });
-
-                // Obtener el producto completo para acceder al precio y descuento
-                const product = await this.productRepository.findOne({
-                    where: { product_id: detail.product.product_id }
-                });
-
-                if (!product) {
-                    continue; // Saltar si el producto no existe
-                }
-
-                // Calcular el precio final considerando el descuento
-                const originalPrice = product.price;
-                const discountPercentage = product.discount_percentage || 0;
-                const finalPrice = originalPrice * (1 - discountPercentage / 100);
-
-                // Crear DTO para detalle del pedido
-                processedDetails.push(new OrderDetailResponseDTO(
-                    detail.order_detail_id,
-                    detail.product.product_id,
-                    detail.product.name,
-                    detail.quantity,
-                    originalPrice,
-                    discountPercentage,
-                    finalPrice,
-                    detail.size,
-                    detail.color,
-                    productImage ? productImage.image_url : null
-                ));
-            }
-
-            // Crear DTO para el pedido y añadirlo al array
-            processedOrders.push(new OrderResponseDTO(
-                order.order_id,
-                order.status,
-                order.created_at,
-                order.updated_at,
-                order.address || null,
-                processedDetails
-            ));
-        }
-
-        // Retornar DTO con todos los pedidos
-        return new UserOrdersDTO(processedOrders);
+        // Guardar pedido con detalles (cascade)
+        return await orderRepo.save(order);
     }
 }
