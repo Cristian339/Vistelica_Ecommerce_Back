@@ -28,6 +28,20 @@ router.post("/user",
     }
 );
 
+
+router.delete('/user',
+    (req: Request, res: Response, next: NextFunction) => {
+        auth.authenticate(req, res, next);
+    },
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            await userController.deleteUser(req, res);
+        } catch(error) {
+            next(error);
+        }
+    }
+);
+
 router.post('/login', async (req: Request, res: Response, next: NextFunction) => {
     console.log('POST /login')
     try {

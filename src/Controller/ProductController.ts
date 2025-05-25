@@ -90,12 +90,16 @@ export class ProductController {
 
     async getById(req: Request, res: Response): Promise<Response> {
         try {
-            const { productId } = req.params; // Asegúrate de que el nombre coincide con la ruta
+            const { productId } = req.params;
             const product = await this.productService.getProductById(Number(productId));
 
             if (!product) {
                 return res.status(404).json({ message: "Producto no encontrado" });
             }
+
+            // Encontrar la imagen principal
+            const mainImage = product.images?.find(img => img.is_main) || product.images?.[0];
+            const imageUrl = mainImage?.image_url || null;
 
             return res.status(200).json({
                 product_id: product.product_id,
@@ -104,11 +108,13 @@ export class ProductController {
                 price: product.price,
                 discount_percentage: product.discount_percentage,
                 stock_quantity: product.stock_quantity,
-                size: product.sizes,
+                sizes: product.sizes,
                 colors: product.colors,
-                image_url: product.subcategory.image_url_sub,
+                image_url: imageUrl,  // Usamos la imagen principal o la primera
+                main_image: imageUrl,  // Campo adicional para claridad
                 category: product.category,
                 subcategory: product.subcategory,
+                style: product.style,
                 reviews: product.reviews,
                 created_at: product.created_at,
                 updated_at: product.updated_at
