@@ -8,6 +8,7 @@ import {EmailService} from "./EmailService";
 import {ShoppingCartService} from "./ShoppingCartService";
 import {AdditionalAddress} from "../Entities/Address";
 import {UserProfileDTO} from "../DTO/UserProfileDTO";
+import {getManager} from "typeorm";
 export class UserService {
     private userRepository = AppDataSource.getRepository(User);
     private cartRepository = new ShoppingCartService();
@@ -96,7 +97,7 @@ export class UserService {
     }
 
 
-    private async verifyPassword(user: User, password: string): Promise<void> {
+    public async verifyPassword(user: User, password: string): Promise<void> {
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
             throw new Error('Contraseña incorrecta');
@@ -263,7 +264,93 @@ export class UserService {
         return new UserProfileDTO(profile.name, profile.lastName, addresses);
     }
 
+    /**
+     * Elimina completamente un usuario y todos sus datos relacionados
+     * @param userId ID del usuario a eliminar
+     */
+    async deleteUserCompletely(userId: number): Promise<void> {
+        // Usamos el DataSource para crear un QueryRunner y manejar la transacción
+        const queryRunner = AppDataSource.createQueryRunner();
 
+        try {
+            await queryRunner.connect();
+            await queryRunner.startTransaction();
+
+            // 1. Primero obtenemos el usuario con todas sus relaciones
+            const user = await queryRunner.manager.findOne(User, {
+                where: { user_id: userId },
+                relations: [
+                    'profile',
+                    'reviews',
+                    'wishlists',
+                    'orders',
+                    'orders.orderDetails',
+                    'orders.payment',
+                    'additional_addresses',
+                    'payment_methods'
+                ]
+            });
+
+            if (!user) {
+                throw new Error('Usuario no encontrado');
+            }
+
+            // 2. Eliminar órdenes y sus detalles/pagos
+            if (user.orders && user.orders.length > 0) {
+                for (const order of user.orders) {
+                    // Eliminar payment primero si existe
+                    if (order.payments) {
+                        await queryRunner.manager.remove(order.payments);
+                    }
+
+                    // Eliminar order details
+                    if (order.details && order.details.length > 0) {
+                        await queryRunner.manager.remove(order.details);
+                    }
+
+                    // Finalmente eliminar la orden
+                    await queryRunner.manager.remove(order);
+                }
+            }
+
+            // 3. Eliminar wishlists (se eliminan por cascada pero lo hacemos explícitamente)
+            if (user.wishlists && user.wishlists.length > 0) {
+                await queryRunner.manager.remove(user.wishlists);
+            }
+
+            // 4. Eliminar reviews
+            if (user.reviews && user.reviews.length > 0) {
+                await queryRunner.manager.remove(user.reviews);
+            }
+
+            // 5. Eliminar direcciones adicionales
+            if (user.additional_addresses && user.additional_addresses.length > 0) {
+                await queryRunner.manager.remove(user.additional_addresses);
+            }
+
+            // 6. Eliminar métodos de pago
+            if (user.payment_methods && user.payment_methods.length > 0) {
+                await queryRunner.manager.remove(user.payment_methods);
+            }
+
+            // 7. Eliminar perfil (se elimina por cascada pero lo hacemos explícitamente)
+            if (user.profile) {
+                await queryRunner.manager.remove(user.profile);
+            }
+
+            // 8. Finalmente eliminar el usuario
+            await queryRunner.manager.remove(user);
+
+            await queryRunner.commitTransaction();
+        } catch (error) {
+            // Si hay algún error, hacemos rollback
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            // Liberamos el queryRunner
+            await queryRunner.release();
+        }
+    }
 
 
 

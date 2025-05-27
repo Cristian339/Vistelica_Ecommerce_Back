@@ -18,11 +18,14 @@ export class Cart {
     @PrimaryGeneratedColumn({ type: "int" })
     cart_id!: number;
 
-    @ManyToOne(() => User)
+    @ManyToOne(() => User, { onDelete: "CASCADE" })
     @JoinColumn({ name: "user_id" })
     user!: User;
 
-    @OneToMany(() => CartDetail, cartDetail => cartDetail.cart, { cascade: true })
+    @OneToMany(() => CartDetail, cartDetail => cartDetail.cart, {
+        cascade: true,
+        onDelete: "CASCADE" // Añade esto también
+    })
     cartDetails?: CartDetail[];
 
     @Column({ length: 50 })
