@@ -137,4 +137,32 @@ export class EmailService {
 
         await this.transporter.sendMail(mailOptions);
     }
+
+
+
+    // email.service.ts - Método simplificado
+    async sendEmailVerificationCode(email: string, code: string): Promise<void> {
+        const mailOptions = {
+            from: 'Vistelica <vistelica.company@gmail.com>',
+            to: email,
+            subject: 'Código de verificación para cambio de email',
+            html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #c99a02;">VISTELICA</h2>
+            <p>Hemos recibido una solicitud para cambiar el email asociado a tu cuenta.</p>
+            <p>Utiliza el siguiente código para verificar tu identidad:</p>
+            <div style="font-size: 24px; font-weight: bold; letter-spacing: 3px; 
+                        margin: 20px 0; padding: 10px; background: #f5f5f5;">
+                ${code}
+            </div>
+            <p style="font-size: 12px; color: #666;">
+                Este código expirará en 15 minutos. Si no solicitaste este cambio, 
+                por favor ignora este mensaje.
+            </p>
+        </div>
+        `
+        };
+
+        await this.transporter.sendMail(mailOptions);
+    }
 }

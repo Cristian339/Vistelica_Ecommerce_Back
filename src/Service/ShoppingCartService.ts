@@ -86,7 +86,16 @@ export class ShoppingCartService {
                     user: { user_id: userId },
                     status: "Carrito"
                 },
-                relations: ["cartDetails", "cartDetails.product"],
+                relations: {
+                    cartDetails: {
+                        product: true
+                    }
+                },
+                order: {
+                    cartDetails: {
+                        cart_detail_id: "ASC"
+                    }
+                }
             });
         } catch (error) {
             console.error('Error al obtener el pedido por ID de usuario:', error);
