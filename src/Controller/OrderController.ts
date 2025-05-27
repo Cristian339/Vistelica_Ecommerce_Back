@@ -1,12 +1,13 @@
-import { Request, Response } from "express";
-import { AppDataSource } from "../Config/database";
-import { Order, OrderStatus } from "../Entities/Order";
-import { OrderDetail } from "../Entities/OrderDetail";
-import { AdditionalAddress } from "../Entities/Address";
-import { Products } from "../Entities/Products";
-import { Payment } from "../Entities/Payment";
+import {Request, Response} from "express";
+import {AppDataSource} from "../Config/database";
+import {Order, OrderStatus} from "../Entities/Order";
+import {OrderDetail} from "../Entities/OrderDetail";
+import {AdditionalAddress} from "../Entities/Address";
+import {Products} from "../Entities/Products";
+import {Payment} from "../Entities/Payment";
 import {CartDetail} from "../Entities/CartDetail";
 import {Cart} from "../Entities/Cart";
+import {UserService} from "../Service/UserService";
 
 export class OrderController {
     private orderRepository = AppDataSource.getRepository(Order);
@@ -16,6 +17,7 @@ export class OrderController {
     private paymentRepository = AppDataSource.getRepository(Payment);
     private cartDetailRepository = AppDataSource.getRepository(CartDetail);
     private cartRepository = AppDataSource.getRepository(Cart);
+    private userService: UserService = new UserService();
     // Crear pedido
     async createOrder(req: Request, res: Response) {
         try {
@@ -224,6 +226,46 @@ export class OrderController {
         } catch (error) {
             console.error("❌ Error al marcar como entregado:", error);
             return res.status(500).json({ message: "Error interno del servidor" });
+        }
+    }
+
+
+
+    async getIdsDetails(req: Request, res: Response) {
+        try {
+            const token = req.headers.authorization;
+
+            if (!token) {
+                return res.status(401).json({ message: 'Token no proporcionado' });
+            }
+
+            const user = await this.userService.getUserFromToken(token);
+
+            // Buscar órdenes entregadas con relaciones necesarias
+            const deliveredOrders = await this.orderRepository.find({
+                where: {
+                    user: { user_id: user.user_id },
+                    status: OrderStatus.ENTREGADO
+                },
+                relations: ['details', 'details.product'],
+                order: { delivered_at: 'DESC' }
+            });
+
+            // Extraer solo los product_id de todos los detalles
+            const productIds = deliveredOrders.flatMap(order =>
+                order.details.map(detail => detail.product.product_id)
+            );
+
+            // Eliminar duplicados y devolver solo los IDs
+            const uniqueProductIds = [...new Set(productIds)];
+
+            return res.status(200).json({ product_ids: uniqueProductIds });
+        } catch (error) {
+            console.error("Error al obtener IDs de productos entregados:", error);
+            return res.status(500).json({
+                message: "Error interno del servidor",
+                error: error instanceof Error ? error.message : String(error)
+            });
         }
     }
 

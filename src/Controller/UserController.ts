@@ -82,6 +82,139 @@ export class UserController {
         }
     }
 
+    // En UserController.ts
+    public async verifyPassword(req: Request, res: Response): Promise<Response> {
+        try {
+            const token = req.headers.authorization;
+            if (!token) {
+                return res.status(401).json({ message: 'Token no proporcionado' });
+            }
+
+            const { password } = req.body;
+            if (!password) {
+                return res.status(400).json({ message: 'La contraseña es requerida' });
+            }
+
+            const user = await this.userService.getUserFromToken(token);
+            await this.userService.verifyPassword(user, password);
+
+            return res.status(200).json({
+                success: true,
+                message: 'Contraseña verificada correctamente'
+            });
+        } catch (error) {
+            return res.status(200).json({
+                success: false,
+                message: error
+            });
+        }
+    }
+
+
+
+    /**
+     * Envía un código de verificación al email actual para autorizar el cambio de email
+     */
+    async sendEmailChangeVerification(
+        req: Request,
+        res: Response
+    ): Promise<Response> {
+        try {
+            const token = req.headers.authorization;
+            if (!token) {
+                return res.status(401).json({success: false, message: 'Token no proporcionado' });
+            }
+
+            const { password } = req.body;
+            if (!password) {
+                return res.status(200).json({success: false, message: 'La contraseña es requerida' });
+            }
+
+            // Obtener el usuario desde el token
+            const user = await this.userService.getUserFromToken(token);
+            await this.userService.verifyPassword(user, password);
+
+            // Enviar código de verificación
+            const result = await this.userService.sendEmailChangeVerification(
+                user.user_id,
+                password
+            );
+
+            if (!result.success) {
+                return res.status(400).json({success: false, message: result.message });
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: result.message
+            });
+        } catch (error) {
+            if (error instanceof Error) {
+                return res.status(200).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+            return res.status(500).json({
+                success: false,
+                message: 'Error al enviar código de verificación'
+            });
+        }
+    }
+
+    /**
+     * Confirma el cambio de email con el código de verificación
+     */
+    async confirmEmailChange(
+        req: Request,
+        res: Response
+    ): Promise<Response> {
+        try {
+            const token = req.headers.authorization;
+            if (!token) {
+                return res.status(401).json({ message: 'Token no proporcionado' });
+            }
+
+            const { code, newEmail } = req.body;
+            if (!code || !newEmail) {
+                return res.status(400).json({
+                    message: 'Código de verificación y nuevo email son requeridos'
+                });
+            }
+
+            // Obtener el usuario desde el token
+            const user = await this.userService.getUserFromToken(token);
+
+            // Confirmar el cambio de email
+            const result = await this.userService.confirmEmailChange(
+                user.user_id,
+                code,
+                newEmail
+            );
+
+            if (!result.success) {
+                return res.status(400).json({ message: result.message });
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: result.message
+            });
+        } catch (error) {
+            if (error instanceof Error) {
+                return res.status(400).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+            return res.status(500).json({
+                success: false,
+                message: 'Error al confirmar cambio de email'
+            });
+        }
+    }
+
+
     async login(req: Request, res: Response): Promise<Response> {
         try {
             if (!req.body.email) {

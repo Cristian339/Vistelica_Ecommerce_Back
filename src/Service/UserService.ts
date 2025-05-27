@@ -9,11 +9,26 @@ import {ShoppingCartService} from "./ShoppingCartService";
 import {AdditionalAddress} from "../Entities/Address";
 import {UserProfileDTO} from "../DTO/UserProfileDTO";
 import {getManager} from "typeorm";
+import {PaymentMethod} from "../Entities/PaymentMethod";
+import {Wishlist} from "../Entities/Wishlist";
+import {Order} from "../Entities/Order";
+import {OrderDetail} from "../Entities/OrderDetail";
+import {Payment} from "../Entities/Payment";
+import {Review} from "../Entities/Review";
 export class UserService {
     private userRepository = AppDataSource.getRepository(User);
     private cartRepository = new ShoppingCartService();
     private profileRepository = AppDataSource.getRepository(Profile);
     private addressRepository = AppDataSource.getRepository(AdditionalAddress);
+
+
+    private pendingEmailChanges = new Map<number, {
+        userId: number;
+        verificationCode: string;
+        expiresAt: Date;
+    }>();
+
+    private emailService = new EmailService();
 
     async createUser(data: UserRegisterDTO): Promise<User> {
         const existingEmail = await this.userRepository.findOne({
@@ -264,19 +279,171 @@ export class UserService {
         return new UserProfileDTO(profile.name, profile.lastName, addresses);
     }
 
+
     /**
-     * Elimina completamente un usuario y todos sus datos relacionados
-     * @param userId ID del usuario a eliminar
+     * Envía un código de verificación al email actual para autorizar el cambio de email
+     * @param userId ID del usuario
+     * @param password Contraseña actual para verificación
      */
-    async deleteUserCompletely(userId: number): Promise<void> {
-        // Usamos el DataSource para crear un QueryRunner y manejar la transacción
+    async sendEmailChangeVerification(
+        userId: number,
+        password: string
+    ): Promise<{ success: boolean; message: string }> {
+        try {
+            // 1. Verificar usuario y contraseña
+            const user = await this.userRepository.findOne({
+                where: { user_id: userId },
+                select: ['user_id', 'email', 'password'] // Solo seleccionamos los campos necesarios
+            });
+
+            if (!user) {
+                return { success: false, message: 'Usuario no encontrado' };
+            }
+
+            // Verificar contraseña
+            const isPasswordValid = await bcrypt.compare(password, user.password);
+            if (!isPasswordValid) {
+                return { success: false, message: 'Contraseña incorrecta' };
+            }
+
+            // 2. Generar código de 6 dígitos
+            const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+            const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+
+            // 3. Guardar la solicitud
+            this.pendingEmailChanges.set(user.user_id, {
+                userId: user.user_id,
+                verificationCode,
+                expiresAt
+            });
+
+            // 4. Enviar email con el código
+            await this.emailService.sendEmailVerificationCode(user.email, verificationCode);
+
+            return {
+                success: true,
+                message: 'Código de verificación enviado a tu email actual'
+            };
+        } catch (error) {
+            console.error('Error en sendEmailChangeVerification:', error);
+            return {
+                success: false,
+                message: error instanceof Error ? error.message : 'Error al enviar código de verificación'
+            };
+        }
+    }
+
+    /**
+     * Cambia el email después de validar el código de verificación
+     * @param userId ID del usuario
+     * @param code Código de verificación recibido
+     * @param newEmail Nuevo email a establecer
+     */
+    async confirmEmailChange(
+        userId: number,
+        code: string,
+        newEmail: string
+    ): Promise<{ success: boolean; message: string }> {
         const queryRunner = AppDataSource.createQueryRunner();
 
         try {
             await queryRunner.connect();
             await queryRunner.startTransaction();
 
-            // 1. Primero obtenemos el usuario con todas sus relaciones
+            // 1. Verificar que existe una solicitud pendiente
+            const request = this.pendingEmailChanges.get(userId);
+            if (!request) {
+                throw new Error('No hay solicitud de cambio de email pendiente');
+            }
+
+            // 2. Verificar que el código no haya expirado
+            if (new Date() > request.expiresAt) {
+                this.pendingEmailChanges.delete(userId);
+                throw new Error('El código de verificación ha expirado');
+            }
+
+            // 3. Verificar que el código coincida
+            if (request.verificationCode !== code) {
+                throw new Error('Código de verificación incorrecto');
+            }
+
+            // 4. Validar el nuevo email
+            if (!newEmail || !newEmail.includes('@')) {
+                throw new Error('El email proporcionado no es válido');
+            }
+
+            // Verificar si el nuevo email ya existe
+            const emailExists = await queryRunner.manager.findOne(User, {
+                where: { email: newEmail }
+            });
+
+            if (emailExists) {
+                throw new Error('El email ya está en uso por otra cuenta');
+            }
+
+            // 5. Obtener el usuario completo
+            const user = await queryRunner.manager.findOne(User, {
+                where: { user_id: userId },
+                relations: ['profile']
+            });
+
+            if (!user) {
+                throw new Error('Usuario no encontrado');
+            }
+
+            // 6. Verificar que el nuevo email sea diferente al actual
+            if (user.email === newEmail) {
+                throw new Error('El nuevo email debe ser diferente al actual');
+            }
+
+            // 7. Actualizar el email en User
+            user.email = newEmail;
+            await queryRunner.manager.save(User, user);
+
+            // 8. Actualizar también en Profile si existe
+            if (user.profile) {
+                user.profile.email = newEmail;
+                await queryRunner.manager.save(Profile, user.profile);
+            }
+
+            // 9. Eliminar la solicitud pendiente
+            this.pendingEmailChanges.delete(userId);
+
+            await queryRunner.commitTransaction();
+
+            return {
+                success: true,
+                message: 'Email actualizado correctamente'
+            };
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            console.error('Error en confirmEmailChange:', error);
+            return {
+                success: false,
+                message: error instanceof Error ? error.message : 'Error al confirmar cambio de email'
+            };
+        } finally {
+            await queryRunner.release();
+        }
+    }
+
+
+
+
+
+
+    /**
+     * Elimina completamente un usuario y todos sus datos relacionados
+     * @param userId ID del usuario a eliminar
+     */
+    async deleteUserCompletely(userId: number): Promise<void> {
+        const queryRunner = AppDataSource.createQueryRunner();
+
+        try {
+            await queryRunner.connect();
+            await queryRunner.startTransaction();
+
+            // 1. Obtener el usuario con todas sus relaciones
             const user = await queryRunner.manager.findOne(User, {
                 where: { user_id: userId },
                 relations: [
@@ -284,8 +451,8 @@ export class UserService {
                     'reviews',
                     'wishlists',
                     'orders',
-                    'orders.orderDetails',
-                    'orders.payment',
+                    'orders.details',      // Relación OneToMany con OrderDetail
+                    'orders.payments',     // Relación OneToMany con Payment
                     'additional_addresses',
                     'payment_methods'
                 ]
@@ -295,62 +462,66 @@ export class UserService {
                 throw new Error('Usuario no encontrado');
             }
 
-            // 2. Eliminar órdenes y sus detalles/pagos
+            // 2. Eliminar órdenes y sus relaciones
             if (user.orders && user.orders.length > 0) {
                 for (const order of user.orders) {
-                    // Eliminar payment primero si existe
-                    if (order.payments) {
-                        await queryRunner.manager.remove(order.payments);
+                    // Eliminar payments (OneToMany)
+                    if (order.payments && order.payments.length > 0) {
+                        await queryRunner.manager.remove(Payment, order.payments);
                     }
 
-                    // Eliminar order details
+                    // Eliminar order details (OneToMany)
                     if (order.details && order.details.length > 0) {
-                        await queryRunner.manager.remove(order.details);
+                        await queryRunner.manager.remove(OrderDetail, order.details);
                     }
 
-                    // Finalmente eliminar la orden
-                    await queryRunner.manager.remove(order);
+                    // Eliminar la orden
+                    await queryRunner.manager.remove(Order, order);
                 }
             }
 
-            // 3. Eliminar wishlists (se eliminan por cascada pero lo hacemos explícitamente)
+            // 3. Eliminar wishlists (OneToMany)
             if (user.wishlists && user.wishlists.length > 0) {
-                await queryRunner.manager.remove(user.wishlists);
+                await queryRunner.manager.remove(Wishlist, user.wishlists);
             }
 
-            // 4. Eliminar reviews
+            // 4. Eliminar reviews (OneToMany)
             if (user.reviews && user.reviews.length > 0) {
-                await queryRunner.manager.remove(user.reviews);
+                await queryRunner.manager.remove(Review, user.reviews);
             }
 
-            // 5. Eliminar direcciones adicionales
-            if (user.additional_addresses && user.additional_addresses.length > 0) {
-                await queryRunner.manager.remove(user.additional_addresses);
+            // 5. Eliminar direcciones adicionales (OneToMany)
+            // Nota: Las direcciones usadas en órdenes no se deben eliminar
+            const addressesNotInOrders = user.additional_addresses?.filter(address =>
+                !user.orders?.some(order => order.address?.id === address.id)
+            );
+
+            if (addressesNotInOrders && addressesNotInOrders.length > 0) {
+                await queryRunner.manager.remove(AdditionalAddress, addressesNotInOrders);
             }
 
-            // 6. Eliminar métodos de pago
+            // 6. Eliminar métodos de pago (OneToMany)
             if (user.payment_methods && user.payment_methods.length > 0) {
-                await queryRunner.manager.remove(user.payment_methods);
+                await queryRunner.manager.remove(PaymentMethod, user.payment_methods);
             }
 
-            // 7. Eliminar perfil (se elimina por cascada pero lo hacemos explícitamente)
+            // 7. Eliminar perfil (OneToOne)
             if (user.profile) {
-                await queryRunner.manager.remove(user.profile);
+                await queryRunner.manager.remove(Profile, user.profile);
             }
 
             // 8. Finalmente eliminar el usuario
-            await queryRunner.manager.remove(user);
+            await queryRunner.manager.remove(User, user);
 
             await queryRunner.commitTransaction();
         } catch (error) {
-            // Si hay algún error, hacemos rollback
             await queryRunner.rollbackTransaction();
             throw error;
         } finally {
-            // Liberamos el queryRunner
             await queryRunner.release();
         }
     }
+
 
 
 

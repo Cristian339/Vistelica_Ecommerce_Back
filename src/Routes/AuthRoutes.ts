@@ -118,6 +118,47 @@ router.post('/logout',
     }
 );
 
+router.post('/verify-password',
+    (req: Request, res: Response, next: NextFunction) => {
+        auth.authenticate(req, res, next);
+    },
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            await userController.verifyPassword(req, res);
+        } catch(error) {
+            next(error);
+        }
+    }
+);
+
+
+
+router.post('/request-email-change',
+    (req: Request, res: Response, next: NextFunction) => {
+        auth.authenticate(req, res, next);
+    },
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            await userController.sendEmailChangeVerification(req, res);
+        } catch(error) {
+            next(error);
+        }
+    }
+);
+
+// Ruta para confirmar cambio de email con código
+router.post('/confirm-email-change',
+    (req: Request, res: Response, next: NextFunction) => {
+        auth.authenticate(req, res, next);
+    },
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            await userController.confirmEmailChange(req, res);
+        } catch(error) {
+            next(error);
+        }
+    }
+);
 
 
 export default router;
