@@ -7,7 +7,8 @@ import { Products } from "../Entities/Products";
 import { Payment } from "../Entities/Payment";
 import {CartDetail} from "../Entities/CartDetail";
 import {Cart} from "../Entities/Cart";
-
+import { EmailOrderService } from '../Service/EmailOrderService';
+import {User} from "../Entities/User";
 export class OrderController {
     private orderRepository = AppDataSource.getRepository(Order);
     private orderDetailRepository = AppDataSource.getRepository(OrderDetail);
@@ -16,6 +17,9 @@ export class OrderController {
     private paymentRepository = AppDataSource.getRepository(Payment);
     private cartDetailRepository = AppDataSource.getRepository(CartDetail);
     private cartRepository = AppDataSource.getRepository(Cart);
+    private userRepository = AppDataSource.getRepository(User);
+    private emailService = new EmailOrderService();
+
     // Crear pedido
     async createOrder(req: Request, res: Response) {
         try {
@@ -56,7 +60,6 @@ export class OrderController {
             const estimatedDeliveryDate = new Date();
             estimatedDeliveryDate.setDate(estimatedDeliveryDate.getDate() + 3);
 
-
             // Crear la orden
             const order = new Order();
             order.user = { user_id: userId } as any;
@@ -69,7 +72,10 @@ export class OrderController {
 
             order.details = [];
             for (const item of details) {
-                const product = await this.productRepository.findOneBy({ product_id: item.product_id });
+                const product = await this.productRepository.findOne({
+                    where: { product_id: item.product_id },
+                    relations: ['images'] // Cargar imágenes del producto
+                });
                 if (!product) {
                     return res.status(404).json({ message: `Producto con id ${item.product_id} no encontrado.` });
                 }
@@ -81,6 +87,7 @@ export class OrderController {
                 detail.color = item.color || null;
                 order.details.push(detail);
             }
+
             // Generar número de pedido legible
             const now = new Date();
             const datePart = now.toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
@@ -103,12 +110,28 @@ export class OrderController {
             savedOrder.payment_method_id = savedPayment.payment_id;
             await this.orderRepository.save(savedOrder);
 
-            return res.status(201).json({ message: "Pedido y pago creados correctamente", order: savedOrder, payment: savedPayment });
+            // Obtener el usuario completo con su email y perfil
+            const user = await this.userRepository.findOne({
+                where: { user_id: userId },
+                relations: ['profile']
+            }) as User;
+
+            // Enviar correo de confirmación usando el servicio
+            if (user && user.email) {
+                await this.emailService.sendOrderConfirmationEmail(user, savedOrder, savedPayment);
+            }
+
+            return res.status(201).json({
+                message: "Pedido y pago creados correctamente",
+                order: savedOrder,
+                payment: savedPayment
+            });
         } catch (error) {
             console.error(error);
             return res.status(500).json({ message: "Error interno del servidor" });
         }
     }
+
 
 
     // Actualizar método de pago en el pedido
