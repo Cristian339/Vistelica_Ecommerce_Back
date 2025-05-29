@@ -49,6 +49,25 @@ export class OrderController {
                 return res.status(404).json({ message: "Dirección no encontrada o no pertenece al usuario." });
             }
 
+            // Validar stock disponible antes de crear el pedido
+            for (const item of details) {
+                const product = await this.productRepository.findOne({
+                    where: { product_id: item.product_id }
+                });
+
+                if (!product) {
+                    return res.status(404).json({
+                        message: `Producto con id ${item.product_id} no encontrado.`
+                    });
+                }
+
+                if (product.stock_quantity < item.quantity) {
+                    return res.status(400).json({
+                        message: `Stock insuficiente para el producto "${product.name}". Stock disponible: ${product.stock_quantity}, cantidad solicitada: ${item.quantity}`
+                    });
+                }
+            }
+
             // Calcular total_price sin envío
             let total_price = 0;
             for (const item of details) {
@@ -74,14 +93,21 @@ export class OrderController {
             order.estimated_delivery_date = estimatedDeliveryDate;
 
             order.details = [];
+
+            // Crear detalles del pedido y actualizar stock
             for (const item of details) {
                 const product = await this.productRepository.findOne({
                     where: { product_id: item.product_id },
                     relations: ['images'] // Cargar imágenes del producto
                 });
+
                 if (!product) {
-                    return res.status(404).json({ message: `Producto con id ${item.product_id} no encontrado.` });
+                    return res.status(404).json({
+                        message: `Producto con id ${item.product_id} no encontrado.`
+                    });
                 }
+
+                // Crear detalle del pedido
                 const detail = new OrderDetail();
                 detail.product = product;
                 detail.price = item.price;
@@ -89,6 +115,10 @@ export class OrderController {
                 detail.size = item.size || null;
                 detail.color = item.color || null;
                 order.details.push(detail);
+
+                // Actualizar stock del producto
+                product.stock_quantity -= item.quantity;
+                await this.productRepository.save(product);
             }
 
             // Generar número de pedido legible

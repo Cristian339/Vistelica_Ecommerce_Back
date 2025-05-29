@@ -3,10 +3,12 @@ import express, { Request, Response, NextFunction} from 'express';
 import { ShoppingCartController } from '../Controller/ShoppingCartController';
 import { ShoppingCartDetailController } from '../Controller/ShoppingCartDetailController';
 
+import {Auth} from "../Middleware/Auth";
+
 const router = express.Router();
 const shoppingCartDetailController = new ShoppingCartDetailController();
 const shoppingCartController = new ShoppingCartController();
-
+const auth = new Auth();
 // Rutas principales del carrito
 router.post('/cart/', async (req: Request, res: Response, next: NextFunction) => {
 

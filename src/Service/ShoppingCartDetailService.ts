@@ -237,4 +237,5 @@ export class ShoppingCartDetailService {
             throw new Error('Error al calcular el precio total');
         }
     }
+
 }
