@@ -62,7 +62,7 @@ router.delete('/:id',
     }
 );
 
-/*Método: PATCH No requiere body*/
+
 // Establecer como dirección predeterminada
 router.patch('/:id/default',
     (req: Request, res: Response, next: NextFunction) => {
