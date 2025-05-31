@@ -20,6 +20,7 @@ export class AddressService {
     // Agregar nueva dirección adicional
     async addAddress(addressData: Partial<AdditionalAddress>, userId: number): Promise<{success: boolean; data?: AdditionalAddress; message?: string}> {
         // Validar que la dirección no esté vacía
+
         if (!addressData.street || !addressData.city || !addressData.postal_code) {
             return {
                 success: false,

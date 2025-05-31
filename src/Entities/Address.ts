@@ -28,6 +28,15 @@ export class AdditionalAddress {
     @Column({ nullable: true })
     label: string;
 
+    @Column({ nullable: true })
+    block!: string;
+
+    @Column({ nullable: true })
+    floor!: string;
+
+    @Column({ nullable: true })
+    door!: string;
+
     @ManyToOne(() => User, user => user.additional_addresses)
     @JoinColumn({ name: "user_id" })
     user: User;
