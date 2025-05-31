@@ -57,22 +57,46 @@ export class ProductService {
     }
 
     // Obtener todos los productos
-    async getAllProducts(): Promise<Products[]> {
+    async getAllProducts(): Promise<any[]> {
         try {
             console.log('Consultando todos los productos...');
 
-            const products = await this.productRepository.find({
-                relations: ['category', 'subcategory'],
-            });
+            const products = await this.productRepository
+                .createQueryBuilder('product')
+                .leftJoinAndSelect('product.category', 'category')
+                .leftJoinAndSelect('product.subcategory', 'subcategory')
+                .leftJoinAndSelect('product.reviews', 'reviews')
+                .leftJoinAndSelect('product.images', 'images')
+                .leftJoinAndSelect('product.style', 'style')
+                .where('product.discard = :discard', { discard: false })
+                .getMany();
 
-            const productsWithCategoryAndSubcategory = products.map(product => ({
-                ...product,
+            const productsWithReviewCount = products.map(product => ({
+                product_id: product.product_id,
+                name: product.name,
+                description: product.description,
+                price: product.price,
+                stock_quantity: product.stock_quantity,
+                sizes: product.sizes,
+                colors: product.colors,
+                discount_percentage: product.discount_percentage,
+                created_at: product.created_at,
+                updated_at: product.updated_at,
                 categoryId: product.category?.category_id,
                 subcategoryId: product.subcategory?.subcategory_id,
+                category: product.category,
+                subcategory: product.subcategory,
+                style: product.style,
+                images: product.images,
+                reviews_count: product.reviews ? product.reviews.length : 0,
+                // Opcional: también puedes incluir el rating promedio
+                average_rating: product.reviews && product.reviews.length > 0
+                    ? parseFloat((product.reviews.reduce((sum, review) => sum + review.rating, 0) / product.reviews.length).toFixed(1))
+                    : 0.0
             }));
 
-            console.log('Productos obtenidos:', productsWithCategoryAndSubcategory);
-            return productsWithCategoryAndSubcategory;
+            console.log('Productos obtenidos con conteo de reseñas:', productsWithReviewCount);
+            return productsWithReviewCount;
         } catch (error) {
             console.error('Error al obtener productos:', error);
             throw new Error('Error al obtener productos');
@@ -152,16 +176,42 @@ export class ProductService {
 
 
     // Obtener productos por categoría y subcategoría
-    async getProductsByCategoryAndSubcategory(categoryId: number, subcategoryId: number): Promise<Products[]> {
+    async getProductsByCategoryAndSubcategory(categoryId: number, subcategoryId: number): Promise<any[]> {
         try {
-            const products = await this.productRepository.find({
-                where: {
-                    category: { category_id: categoryId },
-                    subcategory: { subcategory_id: subcategoryId }
-                },
-                relations: ['category', 'subcategory']
-            });
-            return products;
+            const products = await this.productRepository
+                .createQueryBuilder('product')
+                .leftJoinAndSelect('product.category', 'category')
+                .leftJoinAndSelect('product.subcategory', 'subcategory')
+                .leftJoinAndSelect('product.reviews', 'reviews')
+                .leftJoinAndSelect('product.images', 'images')
+                .leftJoinAndSelect('product.style', 'style')
+                .where('product.category.category_id = :categoryId', { categoryId })
+                .andWhere('product.subcategory.subcategory_id = :subcategoryId', { subcategoryId })
+                .andWhere('product.discard = :discard', { discard: false })
+                .getMany();
+
+            const productsWithRating = products.map(product => ({
+                product_id: product.product_id,
+                name: product.name,
+                description: product.description,
+                price: product.price,
+                stock_quantity: product.stock_quantity,
+                sizes: product.sizes,
+                colors: product.colors,
+                discount_percentage: product.discount_percentage,
+                created_at: product.created_at,
+                updated_at: product.updated_at,
+                category: product.category,
+                subcategory: product.subcategory,
+                style: product.style,
+                images: product.images,
+                reviews_count: product.reviews ? product.reviews.length : 0,
+                average_rating: product.reviews && product.reviews.length > 0
+                    ? parseFloat((product.reviews.reduce((sum, review) => sum + review.rating, 0) / product.reviews.length).toFixed(1))
+                    : 0.0
+            }));
+
+            return productsWithRating;
         } catch (error) {
             console.error('Error fetching products by category and subcategory:', error);
             throw new Error('Error fetching products by category and subcategory');
