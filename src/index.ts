@@ -18,6 +18,7 @@ import AddressRoutes from './Routes/AddressRoutes';
 import StyleRoutes from './Routes/StyleRoutes';
 import PaymentMethodRoutes from "./Routes/PaymentMethodRoutes";
 import { AdminService } from './Service/AdminService';
+import ReviewReportRoutes  from "./Routes/ReviewReportRoutes";
 
 dotenv.config();
 const app = express();
@@ -65,6 +66,7 @@ app.use('/api', colorDetectionRoutes);
 app.use('/api/addresses', AddressRoutes);
 app.use('/api', PaymentMethodRoutes);
 app.use('/api', StyleRoutes);
+app.use('/api', ReviewReportRoutes);
 const start = async () => {
     try {
         // Conectar a la base de datos con TypeORM

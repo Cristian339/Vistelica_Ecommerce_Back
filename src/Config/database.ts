@@ -20,6 +20,7 @@ import {StyleImage} from "../Entities/StyleImage";
 import {PaymentMethod} from "../Entities/PaymentMethod";
 import {Cart} from "../Entities/Cart";
 import {CartDetail} from "../Entities/CartDetail";
+import { ReviewReport } from "../Entities/ReviewReport";
 
 // Cargar variables de entorno
 dotenv.config();
@@ -39,7 +40,7 @@ export const AppDataSource = new DataSource({
     password: url.password,
     database: url.pathname.split('/')[1],
     schema: 'vistelica',
-    entities: [User, Profile, Products, Category, Subcategory, Review, Order, OrderDetail, Wishlist, Payment, Supplier, ProductImage,AdditionalAddress, Style, StyleImage, PaymentMethod, Cart, CartDetail],
+    entities: [User, Profile, Products, Category, Subcategory, Review, Order, OrderDetail, Wishlist, Payment, Supplier, ProductImage,AdditionalAddress, Style, StyleImage, PaymentMethod, Cart, CartDetail, ReviewReport],
     synchronize: true,
     logging: false,
     ssl: true,

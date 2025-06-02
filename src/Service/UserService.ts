@@ -50,6 +50,7 @@ export class UserService {
 
         const savedUser = await this.userRepository.save(user);
 
+        // Crear y guardar el perfil
         const profileRepository = AppDataSource.getRepository(Profile);
         const profile = profileRepository.create({
             user: savedUser,
@@ -63,10 +64,43 @@ export class UserService {
 
         await profileRepository.save(profile);
 
-        this.cartRepository.createOrder(savedUser.user_id);
+        // Función helper para crear direcciones
+        const createAddress = async (addressData: any, defaultLabel: string, defaultIsDefault: boolean) => {
+            if (addressData && addressData.street && addressData.city && addressData.state &&
+                addressData.postal_code && addressData.country) {
+
+                const addressRepository = AppDataSource.getRepository(AdditionalAddress);
+                const address = addressRepository.create({
+                    street: addressData.street,
+                    city: addressData.city,
+                    state: addressData.state,
+                    postal_code: addressData.postal_code,
+                    country: addressData.country,
+                    block: addressData.block || '',
+                    floor: addressData.floor || '',
+                    door: addressData.door || '',
+                    label: addressData.label || defaultLabel,
+                    is_default: addressData.is_default !== undefined ? addressData.is_default : defaultIsDefault,
+                    user: savedUser,
+                    user_id: savedUser.user_id
+                });
+
+                await addressRepository.save(address);
+            }
+        };
+
+        // Guardar dirección principal (si existe)
+        await createAddress(data.getMainAddressData(), 'Dirección Principal', true);
+
+        // Guardar dirección adicional (si está marcada para incluir)
+        if (data.includeAdditionalAddress) {
+            await createAddress(data.getAdditionalAddressData(), 'Dirección Adicional', false);
+        }
+
+        // Obtener el usuario completo con todas las relaciones
         const result = await this.userRepository.findOne({
             where: {user_id: savedUser.user_id},
-            relations: ['profile']
+            relations: ['profile', 'additional_addresses']
         });
 
         if (!result) {
