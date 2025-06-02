@@ -91,4 +91,35 @@ router.get('/cart/delivered-products',
 );
 
 
+// routes.ts
+
+// Solicitar devolución para un item de pedido
+router.post('/delivered/request-refund',
+    (req: Request, res: Response, next: NextFunction) => {
+        auth.authenticate(req, res, next);
+    },
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            await orderController.solicitarDevolucion(req, res);
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
+// Obtener pedidos entregados con detalles
+router.get('/delivered/delivered-with-details',
+    (req: Request, res: Response, next: NextFunction) => {
+        auth.authenticate(req, res, next);
+    },
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            await orderController.getEntregadosConDetalles(req, res);
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
+
 export default router;

@@ -5,6 +5,7 @@ import { Category } from "../Entities/Category";
 import { Subcategory } from "../Entities/Subcategory";
 import { uploadImage } from '../Config/Cloudinary';
 import { ProductImage } from "../Entities/ProductImage";
+import {Brackets} from "typeorm";
 
 export class ProductService {
     private productRepository = AppDataSource.getRepository(Products);
@@ -446,32 +447,74 @@ export class ProductService {
         categoryIds?: number[] | undefined
     ): Promise<{ id: number; name: string; mainImage: string | null }[]> {
         try {
-            // Construimos la consulta base
-            const query = this.productRepository.createQueryBuilder('product')
-                .select(['product.product_id', 'product.name'])
-                .where('product.discard = false');
+            if (!searchText) return [];
 
-            // Aplicamos filtros según los parámetros
-            if (searchText) {
-                query.andWhere('LOWER(product.name) LIKE :searchText', {
-                    searchText: `%${searchText.toLowerCase()}%`
+            const searchLower = searchText.toLowerCase();
+
+            // Paso 1: Buscar productos cuyo nombre coincida
+            const productQuery = this.productRepository
+                .createQueryBuilder('product')
+                .leftJoin('product.subcategory', 'subcategory')
+                .select([
+                    'product.product_id AS product_id',
+                    'product.name AS name'
+                ])
+                .where('product.discard = false')
+                .andWhere('LOWER(product.name) LIKE :searchText', {
+                    searchText: `%${searchLower}%`
                 });
-            }
 
             if (categoryIds && categoryIds.length > 0) {
-                query.andWhere('product.category_id IN (:...categoryIds)', { categoryIds });
+                productQuery.andWhere('product.category_id IN (:...categoryIds)', { categoryIds });
             }
 
-            // Ordenamos y obtenemos los resultados
-            query.orderBy('product.name', 'ASC');
-            const products = await query.getMany();
+            // Paso 2: Buscar subcategorías cuyo nombre coincida
+            const matchingSubcategories = await this.subcategoryRepository
+                .createQueryBuilder('subcategory')
+                .select(['subcategory.subcategory_id'])
+                .where('LOWER(subcategory.name) LIKE :searchText', {
+                    searchText: `%${searchLower}%`
+                })
+                .getMany();
 
-            // Obtenemos las imágenes principales para cada producto
+            const subcategoryIds = matchingSubcategories.map(sc => sc.subcategory_id);
+
+            // Paso 3: Buscar productos que pertenezcan a esas subcategorías
+            const subcategoryProductQuery = this.productRepository
+                .createQueryBuilder('product')
+                .select([
+                    'product.product_id AS product_id',
+                    'product.name AS name'
+                ])
+                .where('product.discard = false')
+                .andWhere('product.subcategory_id IN (:...subcategoryIds)', { subcategoryIds });
+
+            if (categoryIds && categoryIds.length > 0) {
+                subcategoryProductQuery.andWhere('product.category_id IN (:...categoryIds)', { categoryIds });
+            }
+
+            // Paso 4: Combinar ambos resultados usando UNION
+            const combinedQuery = this.productRepository.manager
+                .createQueryBuilder()
+                .select(['product_id as id', 'name'])
+                .from(
+                    `(${productQuery.getQuery()} UNION ${subcategoryProductQuery.getQuery()})`,
+                    'combined'
+                )
+                .setParameters({
+                    ...productQuery.getParameters(),
+                    ...subcategoryProductQuery.getParameters()
+                });
+
+            // Ejecutar la consulta combinada
+            const products = await combinedQuery.getRawMany();
+
+            // Paso 5: Obtener imágenes principales
             const productsWithImages = await Promise.all(
                 products.map(async (product) => {
-                    const mainImage = await this.getMainImageByProductId(product.product_id);
+                    const mainImage = await this.getMainImageByProductId(product.id);
                     return {
-                        id: product.product_id,
+                        id: product.id,
                         name: product.name,
                         mainImage: mainImage?.image_url || null
                     };
@@ -481,9 +524,10 @@ export class ProductService {
             return productsWithImages;
         } catch (error) {
             console.error('Error searching products:', error);
-            throw new Error('Error searching products');
+            return [];
         }
     }
+
 
 
 
@@ -492,50 +536,90 @@ export class ProductService {
         categoryIds?: number[]
     ): Promise<{ product_id: number, name: string, price: number, main_image: string | null }[]> {
         try {
-            const query = this.productRepository
+            const searchLower = searchText?.toLowerCase() ?? '';
+
+            // Paso 1: Query por nombre del producto
+            const productQuery = this.productRepository
                 .createQueryBuilder('product')
-                .leftJoinAndSelect(
+                .leftJoin(
                     'product.images',
                     'image',
                     'image.is_main = :isMain',
                     { isMain: true }
                 )
                 .select([
-                    'product.product_id',
-                    'product.name',
-                    'product.price',
-                    'image.image_url as main_image'
+                    'product.product_id AS product_id',
+                    'product.name AS name',
+                    'product.price AS price',
+                    'image.image_url AS main_image'
                 ])
-                .where('product.discard = :discard', { discard: false });
+                .where('product.discard = false')
+                .andWhere('LOWER(product.name) LIKE :searchText', { searchText: `%${searchLower}%` });
 
-            // Filtro por texto en el nombre
-            if (searchText) {
-                query.andWhere('LOWER(product.name) LIKE :searchText', {
-                    searchText: `%${searchText.toLowerCase()}%`
-                });
-            }
-
-            // Filtro por categorías si hay
             if (categoryIds && categoryIds.length > 0) {
-                query.andWhere('product.category_id IN (:...categoryIds)', { categoryIds });
+                productQuery.andWhere('product.category_id IN (:...categoryIds)', { categoryIds });
             }
 
-            query.orderBy('product.name', 'ASC');
+            // Paso 2: Buscar subcategorías cuyo nombre coincida
+            const matchingSubcategories = await this.subcategoryRepository
+                .createQueryBuilder('subcategory')
+                .select(['subcategory.subcategory_id'])
+                .where('LOWER(subcategory.name) LIKE :searchText', { searchText: `%${searchLower}%` })
+                .getMany();
 
-            const rawResults = await query.getRawMany();
+            const subcategoryIds = matchingSubcategories.map(sc => sc.subcategory_id);
 
-            // Mapeamos los resultados para asegurar el formato correcto
+            // Paso 3: Query por subcategorías coincidentes
+            const subcategoryProductQuery = this.productRepository
+                .createQueryBuilder('product')
+                .leftJoin(
+                    'product.images',
+                    'image',
+                    'image.is_main = :isMain',
+                    { isMain: true }
+                )
+                .select([
+                    'product.product_id AS product_id',
+                    'product.name AS name',
+                    'product.price AS price',
+                    'image.image_url AS main_image'
+                ])
+                .where('product.discard = false')
+                .andWhere('product.subcategory_id IN (:...subcategoryIds)', { subcategoryIds });
+
+            if (categoryIds && categoryIds.length > 0) {
+                subcategoryProductQuery.andWhere('product.category_id IN (:...categoryIds)', { categoryIds });
+            }
+
+            // Paso 4: Combinar ambas queries
+            const combinedQuery = this.productRepository.manager
+                .createQueryBuilder()
+                .select(['product_id', 'name', 'price', 'main_image'])
+                .from(
+                    `(${productQuery.getQuery()} UNION ${subcategoryProductQuery.getQuery()})`,
+                    'combined'
+                )
+                .setParameters({
+                    ...productQuery.getParameters(),
+                    ...subcategoryProductQuery.getParameters()
+                })
+                .orderBy('name', 'ASC');
+
+            const rawResults = await combinedQuery.getRawMany();
+
+            // Paso 5: Formatear resultados
             return rawResults.map(row => ({
-                product_id: row.product_product_id,
-                name: row.product_name,
-                price: row.product_price,
+                product_id: row.product_id,
+                name: row.name,
+                price: row.price,
                 main_image: row.main_image || null
             }));
         } catch (error) {
             console.error('Error fetching products with basic info:', error);
-            throw new Error('Error fetching products with basic info');
+            return [];
         }
     }
+
 
 
 }
