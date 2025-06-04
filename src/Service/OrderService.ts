@@ -1,6 +1,6 @@
 import { DataSource } from "typeorm";
 import { Order, OrderStatus } from "../entities/Order";
-import { OrderDetail } from "../entities/OrderDetail";
+import {OrderDetail, RefundStatus} from "../entities/OrderDetail";
 import { AdditionalAddress } from "../entities/Address";
 import { User } from "../entities/User";
 
@@ -72,5 +72,61 @@ export class OrderService {
 
         // Guardar pedido con detalles (cascade)
         return await orderRepo.save(order);
+    }
+
+
+
+    /**
+     * Cambia el estado de un order_detail de "Nada" a "Revision"
+     * @param orderDetailId ID del detalle de pedido
+     * @param motivo Motivo de la devolución
+     * @returns OrderDetail actualizado
+     */
+    async solicitarDevolucion(orderDetailId: number, motivo: string): Promise<OrderDetail> {
+        const orderDetailRepo = this.dataSource.getRepository(OrderDetail);
+
+        // Buscar el detalle del pedido
+        const detail = await orderDetailRepo.findOne({
+            where: { order_detail_id: orderDetailId }
+        });
+
+        if (!detail) {
+            throw new Error("Order detail not found");
+        }
+
+        // Verificar que el estado actual sea "Nada"
+        if (detail.estado_devolucion !== RefundStatus.NADA) {
+            throw new Error("Solo se puede solicitar devolución para items con estado 'Nada'");
+        }
+
+        // Actualizar los campos
+        detail.estado_devolucion = RefundStatus.REVISION;
+        detail.motivo_devolucion = motivo;
+
+        // Guardar cambios
+        return await orderDetailRepo.save(detail);
+    }
+
+    /**
+     * Obtiene todos los pedidos de un usuario con estado "Entregado" y sus detalles
+     * @param userId ID del usuario
+     * @returns Array de pedidos con sus detalles
+     */
+    async getEntregadosConDetalles(userId: number): Promise<Order[]> {
+        const orderRepo = this.dataSource.getRepository(Order);
+
+        return await orderRepo.find({
+            where: {
+                user: { user_id: userId },
+                status: OrderStatus.ENTREGADO
+            },
+            relations: {
+                details: true,
+                address: true
+            },
+            order: {
+                created_at: "DESC"
+            }
+        });
     }
 }

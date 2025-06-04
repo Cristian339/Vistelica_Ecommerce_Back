@@ -1,7 +1,7 @@
 import {Request, Response} from "express";
 import {AppDataSource} from "../Config/database";
 import {Order, OrderStatus} from "../Entities/Order";
-import {OrderDetail} from "../Entities/OrderDetail";
+import {OrderDetail, RefundStatus} from "../Entities/OrderDetail";
 import {AdditionalAddress} from "../Entities/Address";
 import {Products} from "../Entities/Products";
 import {Payment} from "../Entities/Payment";
@@ -441,6 +441,90 @@ export class OrderController {
                 message: "Error interno del servidor",
                 error: error instanceof Error ? error.message : String(error)
             });
+        }
+    }
+
+
+    async solicitarDevolucion(req: Request, res: Response) {
+        try {
+            const userId = Number(req.user?.id);
+            const { order_detail_id, motivo } = req.body;
+
+            if (!userId) {
+                return res.status(401).json({ message: "No autorizado" });
+            }
+
+            if (!order_detail_id || !motivo) {
+                return res.status(400).json({
+                    message: "Se requieren order_detail_id y motivo"
+                });
+            }
+
+            // Verificar que el detalle pertenece a un pedido del usuario
+            const detail = await this.orderDetailRepository.findOne({
+                where: {
+                    order_detail_id,
+                    order: { user: { user_id: userId } }
+                },
+                relations: ['order', 'order.user']
+            });
+
+            if (!detail) {
+                return res.status(404).json({
+                    message: "Detalle de pedido no encontrado o no pertenece al usuario"
+                });
+            }
+
+            // Verificar que el estado actual sea "Nada"
+            if (detail.estado_devolucion !== RefundStatus.NADA) {
+                return res.status(400).json({
+                    message: "Solo se puede solicitar devolución para items con estado 'Nada'"
+                });
+            }
+
+            // Actualizar los campos usando el enum RefundStatus
+            detail.estado_devolucion = RefundStatus.REVISION;
+            detail.motivo_devolucion = motivo;
+
+            // Guardar cambios
+            const updatedDetail = await this.orderDetailRepository.save(detail);
+
+            return res.status(200).json({
+                message: "Devolución solicitada correctamente",
+                order_detail: updatedDetail
+            });
+        } catch (error) {
+            console.error("Error al solicitar devolución:", error);
+            return res.status(500).json({ message: "Error interno del servidor" });
+        }
+    }
+
+    async getEntregadosConDetalles(req: Request, res: Response) {
+        try {
+            const userId = Number(req.user?.id);
+            if (!userId) {
+                return res.status(401).json({ message: "No autorizado" });
+            }
+
+            const orders = await this.orderRepository.find({
+                where: {
+                    user: { user_id: userId },
+                    status: OrderStatus.ENTREGADO
+                },
+                relations: ['details', 'address', 'details.product'],
+                order: { created_at: "DESC" }
+            });
+
+            // Limpiar información sensible
+            const sanitizedOrders = orders.map(order => {
+                const { user, ...rest } = order;
+                return rest;
+            });
+
+            return res.status(200).json({ orders: sanitizedOrders });
+        } catch (error) {
+            console.error("Error al obtener pedidos entregados:", error);
+            return res.status(500).json({ message: "Error interno del servidor" });
         }
     }
 
