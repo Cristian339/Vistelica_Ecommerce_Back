@@ -1,7 +1,7 @@
 import express, { Router, Request, Response, NextFunction } from "express";
 import { OrderController } from "../Controller/OrderController";
 import { Auth } from "../Middleware/Auth";
-
+import { uploadSingle } from "../Middleware/UploadMiddleware";
 const router: Router = express.Router();
 const orderController = new OrderController();
 const auth = new Auth();
@@ -77,35 +77,20 @@ router.patch('/order/:id/deliver',
 
 
 // Obtener IDs de productos en órdenes entregadas
-router.get('/cart/delivered-products',
+router.post('/delivered/request-refund', uploadSingle,
     (req: Request, res: Response, next: NextFunction) => {
-        auth.authenticate(req, res, next);
-    },
-    async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            await orderController.getIdsDetails(req, res);
-        } catch (error) {
-            next(error);
-        }
+    auth.authenticate(req, res, next);
+},async (req, res, next) => {
+    try {
+        await orderController.solicitarDevolucion(req, res);
+    } catch (error) {
+        next(error);
     }
-);
+});
 
 
-// routes.ts
 
-// Solicitar devolución para un item de pedido
-router.post('/delivered/request-refund',
-    (req: Request, res: Response, next: NextFunction) => {
-        auth.authenticate(req, res, next);
-    },
-    async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            await orderController.solicitarDevolucion(req, res);
-        } catch (error) {
-            next(error);
-        }
-    }
-);
+
 
 // Obtener pedidos entregados con detalles
 router.get('/delivered/delivered-with-details',
@@ -121,5 +106,33 @@ router.get('/delivered/delivered-with-details',
     }
 );
 
+
+
+router.get('/refunds/review',
+    (req: Request, res: Response, next: NextFunction) => {
+        auth.authenticate(req, res, next);
+    },
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            await orderController.getRefundsInReview(req, res);
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
+// Actualizar estado de devolución (solo admin)
+router.put('/refunds/:order_detail_id/status',
+    (req: Request, res: Response, next: NextFunction) => {
+        auth.authenticate(req, res, next);
+    },
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            await orderController.updateRefundStatus(req, res);
+        } catch (error) {
+            next(error);
+        }
+    }
+);
 
 export default router;

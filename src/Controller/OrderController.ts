@@ -8,9 +8,11 @@ import {Payment} from "../Entities/Payment";
 import {CartDetail} from "../Entities/CartDetail";
 import {Cart} from "../Entities/Cart";
 import {UserService} from "../Service/UserService";
-
+import {uploadImage} from "../Config/Cloudinary";
 import { EmailOrderService } from '../Service/EmailOrderService';
 import {User} from "../Entities/User";
+import fs from "fs";
+import {OrderService} from "../Service/OrderService";
 export class OrderController {
     private orderRepository = AppDataSource.getRepository(Order);
     private orderDetailRepository = AppDataSource.getRepository(OrderDetail);
@@ -324,22 +326,25 @@ export class OrderController {
     }
 
 
+
     async solicitarDevolucion(req: Request, res: Response) {
         try {
             const userId = Number(req.user?.id);
             const { order_detail_id, motivo } = req.body;
+            const file = req.file; // Ahora viene de uploadSingle
 
             if (!userId) {
                 return res.status(401).json({ message: "No autorizado" });
             }
 
             if (!order_detail_id || !motivo) {
+                // Limpiar archivo subido si hay error de validación
+                if (file) fs.unlinkSync(file.path);
                 return res.status(400).json({
                     message: "Se requieren order_detail_id y motivo"
                 });
             }
 
-            // Verificar que el detalle pertenece a un pedido del usuario
             const detail = await this.orderDetailRepository.findOne({
                 where: {
                     order_detail_id,
@@ -349,23 +354,40 @@ export class OrderController {
             });
 
             if (!detail) {
+                if (file) fs.unlinkSync(file.path);
                 return res.status(404).json({
                     message: "Detalle de pedido no encontrado o no pertenece al usuario"
                 });
             }
 
-            // Verificar que el estado actual sea "Nada"
             if (detail.estado_devolucion !== RefundStatus.NADA) {
+                if (file) fs.unlinkSync(file.path);
                 return res.status(400).json({
                     message: "Solo se puede solicitar devolución para items con estado 'Nada'"
                 });
             }
 
-            // Actualizar los campos usando el enum RefundStatus
+            let fotoUrl = null;
+            if (file) {
+                try {
+                    fotoUrl = await uploadImage('devoluciones', file.path);
+                } catch (error) {
+                    console.error("Error al subir la imagen:", error);
+                    return res.status(500).json({
+                        message: "Error al subir la imagen de devolución"
+                    });
+                } finally {
+                    // Asegurarse de eliminar el archivo temporal
+                    if (fs.existsSync(file.path)) {
+                        fs.unlinkSync(file.path);
+                    }
+                }
+            }
+
             detail.estado_devolucion = RefundStatus.REVISION;
             detail.motivo_devolucion = motivo;
+            detail.foto_devolucion_url = fotoUrl;
 
-            // Guardar cambios
             const updatedDetail = await this.orderDetailRepository.save(detail);
 
             return res.status(200).json({
@@ -373,8 +395,15 @@ export class OrderController {
                 order_detail: updatedDetail
             });
         } catch (error) {
+            // Limpiar archivo en caso de error
+            if (req.file?.path && fs.existsSync(req.file.path)) {
+                fs.unlinkSync(req.file.path);
+            }
             console.error("Error al solicitar devolución:", error);
-            return res.status(500).json({ message: "Error interno del servidor" });
+            return res.status(500).json({
+                message: "Error interno del servidor",
+                error: error instanceof Error ? error.message : 'Error desconocido'
+            });
         }
     }
 
@@ -404,6 +433,114 @@ export class OrderController {
         } catch (error) {
             console.error("Error al obtener pedidos entregados:", error);
             return res.status(500).json({ message: "Error interno del servidor" });
+        }
+    }
+
+
+    /**
+     * Obtiene todos los OrderDetail que están en estado "Revision"
+     */
+    async getRefundsInReview(req: Request, res: Response) {
+        try {
+            const refunds = await this.orderDetailRepository.find({
+                where: {
+                    estado_devolucion: RefundStatus.REVISION
+                },
+                relations: {
+                    order: {
+                        user: true
+                    },
+                    product: true
+                },
+                order: {
+                    order: {
+                        created_at: "DESC"
+                    }
+                }
+            });
+
+            return res.status(200).json({
+                success: true,
+                data: refunds
+            });
+        } catch (error) {
+            console.error("Error al obtener devoluciones en revisión:", error);
+            return res.status(500).json({
+                message: "Error interno del servidor",
+                error: error instanceof Error ? error.message : 'Error desconocido'
+            });
+        }
+    }
+
+    /**
+     * Actualiza el estado de una devolución
+     */
+    async updateRefundStatus(req: Request, res: Response) {
+        try {
+            const { order_detail_id } = req.params;
+            const { status, rejection_reason } = req.body;
+
+
+            if (!order_detail_id || !status) {
+                return res.status(400).json({
+                    message: "Se requieren order_detail_id y status"
+                });
+            }
+
+            // Convertir status a enum
+            let newStatus: RefundStatus.ACEPTADO | RefundStatus.RECHAZADO;
+            if (status === 'Aceptado') {
+                newStatus = RefundStatus.ACEPTADO;
+            } else if (status === 'Rechazado') {
+                newStatus = RefundStatus.RECHAZADO;
+                if (!rejection_reason) {
+                    return res.status(400).json({
+                        message: "Se requiere un motivo para rechazar la devolución"
+                    });
+                }
+            } else {
+                return res.status(400).json({
+                    message: "Status debe ser 'Aceptado' o 'Rechazado'"
+                });
+            }
+
+            // Buscar el detalle del pedido
+            const detail = await this.orderDetailRepository.findOne({
+                where: { order_detail_id: Number(order_detail_id) },
+                relations: ['order']
+            });
+
+            if (!detail) {
+                return res.status(404).json({ message: "Detalle de pedido no encontrado" });
+            }
+
+            // Verificar que el estado actual sea "Revision"
+            if (detail.estado_devolucion !== RefundStatus.REVISION) {
+                return res.status(400).json({
+                    message: "Solo se puede actualizar el estado de devoluciones en 'Revision'"
+                });
+            }
+
+            // Actualizar los campos
+            detail.estado_devolucion = newStatus;
+
+            if (newStatus === RefundStatus.RECHAZADO) {
+                detail.motivo_devolucion = rejection_reason;
+            }
+
+            // Guardar cambios
+            const updatedDetail = await this.orderDetailRepository.save(detail);
+
+            return res.status(200).json({
+                success: true,
+                data: updatedDetail
+            });
+        } catch (error) {
+            console.error("Error al actualizar estado de devolución:", error);
+            return res.status(500).json({
+                message: "Error interno del servidor",
+                error: error instanceof Error ? error.message : 'Error desconocido'
+            });
         }
     }
 

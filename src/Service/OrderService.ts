@@ -29,6 +29,7 @@ export class OrderService {
         const userRepo = this.dataSource.getRepository(User);
         const addressRepo = this.dataSource.getRepository(AdditionalAddress);
         const orderRepo = this.dataSource.getRepository(Order);
+
         const productRepo = this.dataSource.getRepository("Products"); // asumiendo existe
 
         // Buscar usuario y dirección
@@ -128,5 +129,75 @@ export class OrderService {
                 created_at: "DESC"
             }
         });
+    }
+
+
+
+    /**
+     * Obtiene todas las devoluciones en estado "Revision"
+     */
+    async getRefundsInReview() {
+        let orderDetailRepository = this.dataSource.getRepository(OrderDetail);
+        return await orderDetailRepository.find({
+            where: {
+                estado_devolucion: RefundStatus.REVISION
+            },
+            relations: {
+                order: {
+                    user: true
+                },
+                product: true
+            },
+            order: {
+                order: {
+                    created_at: "DESC"
+                }
+            }
+        });
+    }
+
+    /**
+     * Actualiza el estado de una devolución
+     */
+    async updateRefundStatus(
+        orderDetailId: number,
+        newStatus: RefundStatus.ACEPTADO | RefundStatus.RECHAZADO,
+        rejectionReason?: string
+    ) {
+        // Buscar el detalle del pedido
+        let orderDetailRepository = this.dataSource.getRepository(OrderDetail);
+        const detail = await orderDetailRepository.findOne({
+            where: { order_detail_id: orderDetailId },
+            relations: ['order']
+        });
+
+        if (!detail) {
+            throw new Error("Order detail not found");
+        }
+
+        // Verificar que el estado actual sea "Revision"
+        if (detail.estado_devolucion !== RefundStatus.REVISION) {
+            throw new Error("Solo se puede actualizar el estado de devoluciones en 'Revision'");
+        }
+
+        // Validar que el nuevo estado sea válido
+        if (newStatus !== RefundStatus.ACEPTADO && newStatus !== RefundStatus.RECHAZADO) {
+            throw new Error("El nuevo estado debe ser 'Aceptado' o 'Rechazado'");
+        }
+
+        // Si es rechazo, requerir motivo
+        if (newStatus === RefundStatus.RECHAZADO && !rejectionReason) {
+            throw new Error("Debe proporcionar un motivo para rechazar la devolución");
+        }
+
+        // Actualizar los campos
+        detail.estado_devolucion = newStatus;
+
+        if (newStatus === RefundStatus.RECHAZADO) {
+            detail.motivo_devolucion = rejectionReason;
+        }
+
+        // Guardar cambios
+        return await orderDetailRepository.save(detail);
     }
 }

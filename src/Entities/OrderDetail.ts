@@ -37,9 +37,9 @@ export class OrderDetail {
     @Column({ type: "int", default: 1 })
     quantity!: number;
 
-    // Nuevos campos
+    // Campos de devolución
     @Column({ type: "text", nullable: true })
-    motivo_devolucion!: string | null;
+    motivo_devolucion!: string | undefined;
 
     @Column({
         type: "enum",
@@ -48,4 +48,8 @@ export class OrderDetail {
         default: RefundStatus.NADA
     })
     estado_devolucion!: RefundStatus;
+
+    // Nuevo campo para la foto de devolución
+    @Column({ type: "text", nullable: true })
+    foto_devolucion_url!: string | null;
 }
