@@ -324,6 +324,127 @@ export class OrderController {
             });
         }
     }
+// Método para obtener todas las órdenes (para administradores)
+    async getAllOrders(req: Request, res: Response) {
+        try {
+            // Obtener parámetros de paginación y filtros de query
+            const page = parseInt(req.query.page as string) || 1;
+            const limit = parseInt(req.query.limit as string) || 10;
+            const status = req.query.status as OrderStatus;
+            const sortBy = req.query.sortBy as string || 'created_at';
+            const sortOrder = req.query.sortOrder as 'ASC' | 'DESC' || 'DESC';
+            const search = req.query.search as string; // Para buscar por número de orden o email
+
+            // Calcular offset para paginación
+            const skip = (page - 1) * limit;
+
+            // Construir condiciones where dinámicamente
+            const whereConditions: any = {};
+
+            // Filtrar por estado si se proporciona
+            if (status && Object.values(OrderStatus).includes(status)) {
+                whereConditions.status = status;
+            }
+
+            // Construir query base
+            let queryBuilder = this.orderRepository.createQueryBuilder('order')
+                .leftJoinAndSelect('order.user', 'user')
+                .leftJoinAndSelect('user.profile', 'profile')
+                .leftJoinAndSelect('order.address', 'address')
+                .leftJoinAndSelect('order.details', 'details')
+                .leftJoinAndSelect('details.product', 'product')
+                .leftJoinAndSelect('product.images', 'images')
+                .leftJoinAndSelect('order.payments', 'payments');
+
+            // Aplicar filtros
+            if (status && Object.values(OrderStatus).includes(status)) {
+                queryBuilder = queryBuilder.where('order.status = :status', { status });
+            }
+
+            // Búsqueda por número de orden o email del usuario
+            if (search) {
+                if (status) {
+                    queryBuilder = queryBuilder.andWhere(
+                        '(order.order_number LIKE :search OR user.email LIKE :search)',
+                        { search: `%${search}%` }
+                    );
+                } else {
+                    queryBuilder = queryBuilder.where(
+                        '(order.order_number LIKE :search OR user.email LIKE :search)',
+                        { search: `%${search}%` }
+                    );
+                }
+            }
+
+            // Aplicar ordenamiento
+            const validSortFields = ['created_at', 'total_price', 'status', 'order_number'];
+            const sortField = validSortFields.includes(sortBy) ? sortBy : 'created_at';
+            queryBuilder = queryBuilder.orderBy(`order.${sortField}`, sortOrder);
+
+            // Obtener total de registros para paginación
+            const totalOrders = await queryBuilder.getCount();
+
+            // Aplicar paginación y obtener resultados
+            const orders = await queryBuilder
+                .skip(skip)
+                .take(limit)
+                .getMany();
+
+            // Formatear respuesta eliminando información sensible
+            const formattedOrders = orders.map(order => {
+                // Crear una copia del objeto orden
+                const formattedOrder = {
+                    ...order,
+                    user: {
+                        user_id: order.user.user_id,
+                        email: order.user.email,
+                        profile: order.user.profile ? {
+                            first_name: order.user.profile.name,
+                            last_name: order.user.profile.lastName,
+                            phone: order.user.profile.phone
+                        } : null
+                    }
+                };
+
+                return formattedOrder;
+            });
+
+            // Calcular información de paginación
+            const totalPages = Math.ceil(totalOrders / limit);
+            const hasNextPage = page < totalPages;
+            const hasPrevPage = page > 1;
+
+            // Estadísticas adicionales
+            const orderStats = await this.getOrderStatistics();
+
+            return res.status(200).json({
+                message: "Órdenes obtenidas correctamente",
+                orders: formattedOrders,
+                pagination: {
+                    currentPage: page,
+                    totalPages,
+                    totalOrders,
+                    ordersPerPage: limit,
+                    hasNextPage,
+                    hasPrevPage
+                },
+                filters: {
+                    status: status || 'all',
+                    search: search || '',
+                    sortBy: sortField,
+                    sortOrder
+                },
+                statistics: orderStats
+            });
+
+        } catch (error) {
+            console.error("❌ Error al obtener todas las órdenes:", error);
+            return res.status(500).json({
+                message: "Error interno del servidor",
+                error: error instanceof Error ? error.message : String(error)
+            });
+        }
+    }
 
 
 
@@ -544,4 +665,45 @@ export class OrderController {
         }
     }
 
+// Método auxiliar para obtener estadísticas de órdenes
+    private async getOrderStatistics() {
+        try {
+            const stats = await this.orderRepository
+                .createQueryBuilder('order')
+                .select([
+                    'COUNT(*) as total_orders',
+                    'SUM(CASE WHEN order.status = :almacen THEN 1 ELSE 0 END) as orders_almacen',
+                    'SUM(CASE WHEN order.status = :pendiente THEN 1 ELSE 0 END) as orders_pendiente',
+                    'SUM(CASE WHEN order.status = :enviado THEN 1 ELSE 0 END) as orders_enviado',
+                    'SUM(CASE WHEN order.status = :entregado THEN 1 ELSE 0 END) as orders_entregado',
+                    'SUM(CASE WHEN order.status = :cancelado THEN 1 ELSE 0 END) as orders_cancelado',
+                    'SUM(order.total_price) as total_revenue',
+                    'AVG(order.total_price) as average_order_value'
+                ])
+                .setParameters({
+                    almacen: OrderStatus.ALMACEN,
+                    pendiente: OrderStatus.PENDIENTE,
+                    enviado: OrderStatus.ENVIADO,
+                    entregado: OrderStatus.ENTREGADO,
+                    cancelado: OrderStatus.CANCELADO
+                })
+                .getRawOne();
+
+            return {
+                totalOrders: parseInt(stats.total_orders) || 0,
+                ordersByStatus: {
+                    almacen: parseInt(stats.orders_almacen) || 0,
+                    pendiente: parseInt(stats.orders_pendiente) || 0,
+                    enviado: parseInt(stats.orders_enviado) || 0,
+                    entregado: parseInt(stats.orders_entregado) || 0,
+                    cancelado: parseInt(stats.orders_cancelado) || 0
+                },
+                totalRevenue: parseFloat(stats.total_revenue) || 0,
+                averageOrderValue: parseFloat(stats.average_order_value) || 0
+            };
+        } catch (error) {
+            console.error("Error al obtener estadísticas:", error);
+            return null;
+        }
+    }
 }
