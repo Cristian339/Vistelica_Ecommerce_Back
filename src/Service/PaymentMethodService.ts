@@ -175,4 +175,72 @@ export class PaymentMethodService {
             }
         });
     }
+
+
+
+    // Dentro de la clase PaymentMethodService
+
+    /**
+     * Actualiza un método de pago existente
+     * @param methodId ID del método de pago a actualizar
+     * @param userId ID del usuario dueño del método de pago
+     * @param data Datos a actualizar
+     * @returns Resultado de la operación
+     */
+    async updatePaymentMethod(
+        methodId: number,
+        userId: number,
+        data: Partial<PaymentMethod>
+    ): Promise<{success: boolean; data?: PaymentMethod; message?: string}> {
+        try {
+            // Verificar que existe el método de pago
+            const paymentMethod = await this.paymentMethodRepository.findOne({
+                where: {
+                    payment_method_id: methodId,
+                    user: { user_id: userId }
+                }
+            });
+
+            if (!paymentMethod) {
+                return {
+                    success: false,
+                    message: 'Método de pago no encontrado'
+                };
+            }
+
+            // Actualizar campos permitidos
+            if (data.type !== undefined) paymentMethod.type = data.type;
+            if (data.provider !== undefined) paymentMethod.provider = data.provider;
+            if (data.card_last_four !== undefined) paymentMethod.card_last_four = data.card_last_four;
+            if (data.card_holder_name !== undefined) paymentMethod.card_holder_name = data.card_holder_name;
+            if (data.expiry_month !== undefined) paymentMethod.expiry_month = data.expiry_month;
+            if (data.expiry_year !== undefined) paymentMethod.expiry_year = data.expiry_year;
+
+            // Manejo especial para is_default
+            if (data.is_default !== undefined && data.is_default !== paymentMethod.is_default) {
+                if (data.is_default) {
+                    // Si se está marcando como predeterminado, quitar ese estado de otros
+                    await this.resetDefaultPaymentMethod(userId);
+                }
+                paymentMethod.is_default = data.is_default;
+            }
+
+            // Guardar los cambios
+            const updatedMethod = await this.paymentMethodRepository.save(paymentMethod);
+
+            return {
+                success: true,
+                data: updatedMethod,
+                message: 'Método de pago actualizado correctamente'
+            };
+        } catch (error: any) {
+            console.error("Error al actualizar método de pago:", error);
+            return {
+                success: false,
+                message: `Error al actualizar método de pago: ${error.message}`
+            };
+        }
+    }
+
+
 }

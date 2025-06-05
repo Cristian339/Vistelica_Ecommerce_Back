@@ -125,4 +125,39 @@ export class PaymentMethodController {
             });
         }
     }
+
+
+    async updatePaymentMethod(req: Request, res: Response) {
+        try {
+            if (!req.user || !req.user.id) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Usuario no autenticado"
+                });
+            }
+
+            const { methodId } = req.params;
+            const result = await this.paymentMethodService.updatePaymentMethod(
+                Number(methodId),
+                req.user.id,
+                req.body
+            );
+
+            if (!result.success) {
+                return res.status(400).json(result);
+            }
+
+            return res.status(200).json({
+                success: true,
+                data: result.data,
+                message: result.message || "Método de pago actualizado correctamente"
+            });
+        } catch (error) {
+            console.error("Error al actualizar método de pago:", error);
+            return res.status(500).json({
+                success: false,
+                message: "Error al procesar la solicitud"
+            });
+        }
+    }
 }

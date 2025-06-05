@@ -138,4 +138,20 @@ router.post('/checkout', async (req: Request, res: Response, next: NextFunction)
     }
 });
 
+
+// Actualizar método de pago
+router.put('/payment-methods/:methodId',
+    (req: Request, res: Response, next: NextFunction) => {
+        console.log(`PUT /payment-methods/${req.params.methodId}`);
+        auth.authenticate(req, res, next);
+    },
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            await paymentMethodController.updatePaymentMethod(req, res);
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
 export default router;

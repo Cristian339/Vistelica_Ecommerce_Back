@@ -10,6 +10,9 @@ export class AdditionalAddress {
     @Column()
     street: string;
 
+    @Column({ nullable: true })
+    numero: string;
+
     @Column()
     city: string;
 
@@ -37,6 +40,9 @@ export class AdditionalAddress {
     @Column({ nullable: true })
     door!: string;
 
+    @Column({ nullable: true, type: 'text' })
+    description: string; // Nuevo campo descripción
+
     @ManyToOne(() => User, user => user.additional_addresses)
     @JoinColumn({ name: "user_id" })
     user: User;
@@ -53,23 +59,27 @@ export class AdditionalAddress {
     constructor(
         id: number = 0,
         street: string = '',
+        numero: string | null = null,
         city: string = '',
         state: string = '',
         postal_code: string = '',
         country: string | null = null,
         is_default: boolean = false,
         label: string | null = null,
+        description: string | null = null, // Nuevo parámetro
         user: User | null = null,
         user_id: number = 0
     ) {
         this.id = id;
         this.street = street;
+        this.numero = numero || '';
         this.city = city;
         this.state = state;
         this.postal_code = postal_code;
         this.country = country || '';
         this.is_default = is_default;
         this.label = label || '';
+        this.description = description || '';
         this.user = user as User;
         this.user_id = user_id;
         this.created_at = new Date();
