@@ -324,6 +324,8 @@ export class OrderController {
             });
         }
     }
+
+
 // Método para obtener todas las órdenes (para administradores)
     async getAllOrders(req: Request, res: Response) {
         try {
