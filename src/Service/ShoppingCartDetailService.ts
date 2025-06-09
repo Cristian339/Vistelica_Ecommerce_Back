@@ -56,7 +56,7 @@ export class ShoppingCartDetailService {
 
             // Buscamos un item que coincida en talla y color
             const existingItem = existingItems.find(item =>
-                item.size === finalSize && item.color === finalColor
+                item.size === size && item.color === color
             );
 
             if (existingItem) {
@@ -76,7 +76,6 @@ export class ShoppingCartDetailService {
 
             // Si no existe un item idéntico, creamos uno nuevo
             const cart = { cart_id: cartId } as Cart;
-            const product = { product_id: productId } as Products;
 
             const cartDetail = this.cartDetailRepository.create({
                 cart,
