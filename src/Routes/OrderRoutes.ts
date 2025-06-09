@@ -135,4 +135,19 @@ router.put('/refunds/:order_detail_id/status',
     }
 );
 
+
+
+router.get('/cart/delivered-products',
+    (req: Request, res: Response, next: NextFunction) => {
+        auth.authenticate(req, res, next);
+    },
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            await orderController.getIdsDetails(req, res);
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
 export default router;
