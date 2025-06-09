@@ -27,7 +27,7 @@ export class ShoppingCartDetailService {
                 },
                 relations: ["product"]
             });
-            console.log(1);
+
 
             // Buscamos un item que coincida en talla y color
             const existingItem = existingItems.find(item =>
@@ -35,7 +35,7 @@ export class ShoppingCartDetailService {
             );
 
             if (existingItem) {
-                console.log(2);
+
                 // Si encontramos un item idéntico, actualizamos la cantidad
                 existingItem.quantity += quantity;
 
@@ -47,12 +47,12 @@ export class ShoppingCartDetailService {
                 return await this.cartDetailRepository.save(existingItem);
             }
 
-            console.log(3);
+
 
             // Si no existe un item idéntico, creamos uno nuevo
             const cart = { cart_id: cartId } as Cart;
             const product = { product_id: productId } as Products;
-            console.log(4);
+
             const cartDetail = this.cartDetailRepository.create({
                 cart,
                 product,
@@ -62,7 +62,7 @@ export class ShoppingCartDetailService {
                 color,
                 discount_percentage
             });
-            console.log("OTRA VEEEEEEEEEEE " + JSON.stringify(cartDetail));
+
 
             return await this.cartDetailRepository.save(cartDetail);
         } catch (error) {

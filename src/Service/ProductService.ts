@@ -17,7 +17,7 @@ export class ProductService {
     // Crear un nuevo producto
     async createProduct(data: Partial<Products>, images: { image_url: string, is_main: boolean }[]): Promise<Products> {
         try {
-            console.log("imagenes pasadas"+images);
+
             const category = await this.categoryRepository.findOne({
                 where: { category_id: data.category?.category_id },
             });
@@ -38,15 +38,15 @@ export class ProductService {
             });
 
             const savedProduct = await this.productRepository.save(product);
-            console.log("produto guardado"+ savedProduct);
+
             for (const img of images) {
-                console.log("La imagen"+img);
+
                 const newImage = this.imageRepository.create({
                     image_url: img.image_url,
                     is_main: img.is_main,
                     product: savedProduct,
                 });
-                console.log("La imagen puesta"+newImage);
+
                 await this.imageRepository.save(newImage);
             }
 
@@ -60,7 +60,7 @@ export class ProductService {
     // Obtener todos los productos
     async getAllProducts(): Promise<any[]> {
         try {
-            console.log('Consultando todos los productos...');
+
 
             const products = await this.productRepository
                 .createQueryBuilder('product')
@@ -96,7 +96,7 @@ export class ProductService {
                     : 0.0
             }));
 
-            console.log('Productos obtenidos con conteo de reseñas:', productsWithReviewCount);
+
             return productsWithReviewCount;
         } catch (error) {
             console.error('Error al obtener productos:', error);
@@ -133,7 +133,7 @@ export class ProductService {
     // Actualizar un producto por su ID
     async updateProduct(id: number, data: Partial<Products>): Promise<Products> {
         try {
-            console.log('Datos recibidos:', data);
+
 
             const product = await this.productRepository.findOne({
                 where: { product_id: id },
@@ -537,7 +537,7 @@ export class ProductService {
                 }
             }
 
-            console.log(`Buscando términos: ${searchTerms.join(', ')}`);
+
 
             // Crear condiciones de búsqueda más precisas
             const createSearchConditions = (alias: string) => {
@@ -791,7 +791,7 @@ export class ProductService {
                 }
             }
 
-            console.log(`Buscando términos: ${searchTerms.join(', ')}`);
+
 
             // Crear condiciones de búsqueda más precisas (MISMA LÓGICA)
             const createSearchConditions = (alias: string) => {

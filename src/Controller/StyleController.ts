@@ -21,8 +21,7 @@ export class StyleController {
     }
 
     async create(req: Request, res: Response): Promise<Response> {
-        console.log('req.files:', req.files);
-        console.log('req.body:', req.body);
+
 
         try {
             // Parse the data from the request body
@@ -50,14 +49,13 @@ export class StyleController {
                 .filter((product) => product !== null) // Remove null values
                 .map((product) => product!.product_id); // Extract product IDs
 
-            console.log('Product IDs:', productIds);
+
             // Process images and upload to Cloudinary
             const uploadedImages: { image_url: string, is_main: boolean }[] = [];
-            console.log('Body recibido (antes del parseo):', req.body);
-            console.log('Archivos recibidos:', req.files);
+
 
             if (req.files && Array.isArray(req.files)) {
-                console.log('Archivos recibidos:', req.files); // Verifica si los archivos están presentes
+
 
                 for (let i = 0; i < req.files.length; i++) {
                     const file: any = req.files[i];
@@ -73,7 +71,7 @@ export class StyleController {
                             image_url: imageUrl,
                             is_main: i === 0,
                         });
-                        console.log(`Imagen subida correctamente: ${imageUrl}`);
+
                     } catch (error) {
                         console.error(`Error al subir la imagen del archivo ${file.path}:`, error);
                     }
@@ -138,8 +136,8 @@ export class StyleController {
         try {
             const { categoryId } = req.params;
 
-            // Log the received categoryId
-            console.log('Received categoryId:', categoryId);
+
+
 
             // Validate and parse categoryId
             const parsedCategoryId = Number(categoryId);
