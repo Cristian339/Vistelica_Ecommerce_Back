@@ -24,11 +24,11 @@ export class ProductController {
     async create(req: Request, res: Response): Promise<Response> {
         try {
             let productData: any = req.body.data ? JSON.parse(req.body.data) : req.body;
-            console.log(productData);
-            const requiredFields = ['name', 'description', 'price', 'stock_quantity', 'category_id', 'subcategory_id',  'colors'];
+
+            const requiredFields = ['name', 'description', 'price', 'stock_quantity', 'category_id',   'colors'];
             for (const field of requiredFields) {
                 if (!productData[field]) {
-                    console.log(field)
+
                     return res.status(400).json({ error: `Falta el campo obligatorio: ${field}` });
                 }
             }
@@ -43,7 +43,7 @@ export class ProductController {
             }
 
             const uploadedImages: { image_url: string, is_main: boolean }[] = [];
-            console.log(uploadedImages);
+
             if (req.files && Array.isArray(req.files)) {
                 for (let i = 0; i < req.files.length; i++) {
                     const file: any = req.files[i];
@@ -54,7 +54,7 @@ export class ProductController {
                     });
                 }
             }
-            console.log(uploadedImages);
+
             const product = await this.productService.createProduct({
                 name,
                 description,
@@ -78,7 +78,7 @@ export class ProductController {
 
 
     async getAll(req: Request, res: Response): Promise<Response> {
-        console.log('controllador');
+        // Obtener todos los productos
         try {
             const products = await this.productService.getAllProducts();
             return res.status(200).json(products);
@@ -478,8 +478,7 @@ export class ProductController {
             let parsedCategoryIds: number[] | undefined;
             if (categoryIds) {
                 try {
-                    console.log("Entro")
-                    console.log(categoryIds)
+
                     parsedCategoryIds = (Array.isArray(categoryIds)
                         ? categoryIds.map(id => Number(id))
                         // @ts-ignore
@@ -495,8 +494,7 @@ export class ProductController {
 
             // Procesamiento de searchText
             const processedSearchText = searchText?.toString().trim();
-            console.log("texto" + processedSearchText);
-            console.log("categoriad" + parsedCategoryIds);
+
             // Llamada al servicio
             const products = await this.productService.searchProductsByNameAndCategories(
                 processedSearchText,

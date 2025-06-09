@@ -31,10 +31,10 @@ export class EmailOrderService {
             };
 
             await this.transporter.sendMail(mailOptions);
-            console.log(`Correo de confirmación enviado a: ${user.email}`);
+
         } catch (error) {
             console.error('Error enviando correo de confirmación:', error);
-            // No lanzamos error para no afectar la creación del pedido
+
         }
     }
 
@@ -51,8 +51,7 @@ export class EmailOrderService {
             const mainImage = detail.product.images?.find(img => img.is_main)?.image_url ||
                 detail.product.images?.[0]?.image_url ||
                 '/default-product-image.jpg';
-            console.log('📎 URL con inspección:', mainImage);
-            console.log(`Imagen principal para el producto ${detail.product.name}: ${mainImage}`);
+
             const sizeColorInfo = [];
             if (detail.size) sizeColorInfo.push(`Talla: ${detail.size}`);
             if (detail.color) sizeColorInfo.push(`Color: ${detail.color}`);
@@ -319,7 +318,7 @@ export class EmailOrderService {
             };
 
             await this.transporter.sendMail(mailOptions);
-            console.log(`Correo de actualización enviado a: ${user.email}`);
+
         } catch (error) {
             console.error('Error enviando correo de actualización:', error);
         }

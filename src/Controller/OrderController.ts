@@ -206,9 +206,9 @@ export class OrderController {
     async getOrderDetailsById(req: Request, res: Response) {
         try {
             const userId = Number(req.user?.id);
-            const orderId = Number(req.params.id); // <-- aquí corriges el nombre del parámetro
+            const orderId = Number(req.params.id);
 
-            console.log("🧾 Verificando pedido", { userId, orderId });
+
 
             if (!userId) {
                 return res.status(401).json({ message: "No autorizado" });

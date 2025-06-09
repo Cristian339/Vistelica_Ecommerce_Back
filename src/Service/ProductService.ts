@@ -17,7 +17,7 @@ export class ProductService {
     // Crear un nuevo producto
     async createProduct(data: Partial<Products>, images: { image_url: string, is_main: boolean }[]): Promise<Products> {
         try {
-            console.log("imagenes pasadas"+images);
+
             const category = await this.categoryRepository.findOne({
                 where: { category_id: data.category?.category_id },
             });
@@ -38,15 +38,15 @@ export class ProductService {
             });
 
             const savedProduct = await this.productRepository.save(product);
-            console.log("produto guardado"+ savedProduct);
+
             for (const img of images) {
-                console.log("La imagen"+img);
+
                 const newImage = this.imageRepository.create({
                     image_url: img.image_url,
                     is_main: img.is_main,
                     product: savedProduct,
                 });
-                console.log("La imagen puesta"+newImage);
+
                 await this.imageRepository.save(newImage);
             }
 
@@ -60,7 +60,7 @@ export class ProductService {
     // Obtener todos los productos
     async getAllProducts(): Promise<any[]> {
         try {
-            console.log('Consultando todos los productos...');
+
 
             const products = await this.productRepository
                 .createQueryBuilder('product')
@@ -96,7 +96,7 @@ export class ProductService {
                     : 0.0
             }));
 
-            console.log('Productos obtenidos con conteo de reseñas:', productsWithReviewCount);
+
             return productsWithReviewCount;
         } catch (error) {
             console.error('Error al obtener productos:', error);
@@ -133,7 +133,7 @@ export class ProductService {
     // Actualizar un producto por su ID
     async updateProduct(id: number, data: Partial<Products>): Promise<Products> {
         try {
-            console.log('Datos recibidos:', data);
+
 
             const product = await this.productRepository.findOne({
                 where: { product_id: id },
@@ -445,102 +445,385 @@ export class ProductService {
     async searchProductsByNameAndCategories(
         searchText: string | undefined,
         categoryIds?: number[] | undefined
-    ): Promise<{ id: number; name: string; mainImage: string | null }[]> {
+    ): Promise<{ id: number; name: string; mainImage: string | null; relevance?: number }[]> {
         try {
-            if (!searchText) return [];
+            if (!searchText || searchText.trim().length < 2) return [];
 
-            const searchLower = searchText.toLowerCase();
+            // Normalizar el texto de búsqueda
+            const searchLower = searchText.toLowerCase().trim();
 
-            // Paso 1: Buscar productos cuyo nombre coincida
+            // Expandir términos comunes para mejorar la búsqueda
+            const termExpansions: { [key: string]: string[] } = {
+                'pant': ['pantalón', 'pantalones'],
+                'camiset': ['camiseta', 'camisetas'],
+                'sudadera': ['sudadera', 'sudaderas'],
+                'zapat': ['zapato', 'zapatos', 'zapatilla', 'zapatillas'],
+                'jersey': ['jersey', 'jerseys', 'suéter'],
+                'falda': ['falda', 'faldas'],
+                'camis': ['camisa', 'camisas'],
+                'chaqueta': ['chaqueta', 'chaquetas', 'cazadora', 'chándal', 'chandal', 'americana', 'americanas'],
+                'chandal': ['chaqueta', 'chaquetas', 'cazadora', 'chándal', 'chandal', 'americana', 'americanas'],
+                'chándal': ['chaqueta', 'chaquetas', 'cazadora', 'chándal', 'chandal', 'americana', 'americanas'],
+                'americana': ['chaqueta', 'chaquetas', 'cazadora', 'chándal', 'chandal', 'americana', 'americanas']
+            };
+
+            // Lista completa de términos contradictorios - AMPLIADA
+            const contradictoryTerms: { [key: string]: string[] } = {
+                'pant': ['camiseta', 'camisetas', 'vestido', 'vestidos', 'falda', 'faldas', 'top', 'tops', 'camisa', 'camisas', 'jersey', 'jerseys', 'zapato', 'zapatos', 'zapatilla', 'zapatillas', 'chaqueta', 'chaquetas', 'sudadera', 'sudaderas', 'anillo', 'anillos', 'collar', 'collares', 'pulsera', 'pulseras', 'pendiente', 'pendientes', 'reloj', 'relojes', 'gorra', 'gorras', 'sombrero', 'sombreros', 'cinturón', 'cinturones', 'bolso', 'bolsos', 'mochila', 'mochilas', 'calcetín', 'calcetines', 'llavero', 'llaveros', 'pack', 'set'],
+                'camiset': ['pantalón', 'pantalones', 'vestido', 'vestidos', 'falda', 'faldas', 'short', 'shorts', 'bermuda', 'bermudas', 'jersey', 'jerseys', 'zapato', 'zapatos', 'zapatilla', 'zapatillas', 'top', 'tops', 'body', 'bodies', 'sudadera', 'sudaderas', 'anillo', 'anillos', 'collar', 'collares', 'pulsera', 'pulseras', 'pendiente', 'pendientes', 'reloj', 'relojes', 'gorra', 'gorras', 'sombrero', 'sombreros', 'cinturón', 'cinturones', 'bolso', 'bolsos', 'mochila', 'mochilas', 'calcetín', 'calcetines', 'llavero', 'llaveros', 'pack', 'set'],
+                'sudadera': ['camiseta', 'camisetas', 'pantalón', 'pantalones', 'vestido', 'vestidos', 'falda', 'faldas', 'zapato', 'zapatos', 'zapatilla', 'zapatillas', 'top', 'tops', 'body', 'bodies', 'camisa', 'camisas', 'anillo', 'anillos', 'collar', 'collares', 'pulsera', 'pulseras', 'pendiente', 'pendientes', 'reloj', 'relojes', 'gorra', 'gorras', 'sombrero', 'sombreros', 'cinturón', 'cinturones', 'bolso', 'bolsos', 'mochila', 'mochilas', 'calcetín', 'calcetines', 'llavero', 'llaveros', 'pack', 'set'],
+                'vestido': ['camiseta', 'camisetas', 'pantalón', 'pantalones', 'falda', 'faldas', 'short', 'shorts', 'camisa', 'camisas', 'jersey', 'jerseys', 'zapato', 'zapatos', 'zapatilla', 'zapatillas', 'chaqueta', 'chaquetas', 'top', 'tops', 'sudadera', 'sudaderas', 'anillo', 'anillos', 'collar', 'collares', 'pulsera', 'pulseras', 'pendiente', 'pendientes', 'reloj', 'relojes', 'gorra', 'gorras', 'sombrero', 'sombreros', 'cinturón', 'cinturones', 'bolso', 'bolsos', 'mochila', 'mochilas', 'calcetín', 'calcetines', 'llavero', 'llaveros', 'pack', 'set'],
+                'falda': ['camiseta', 'camisetas', 'pantalón', 'pantalones', 'vestido', 'vestidos', 'short', 'shorts', 'camisa', 'camisas', 'jersey', 'jerseys', 'zapato', 'zapatos', 'zapatilla', 'zapatillas', 'chaqueta', 'chaquetas', 'top', 'tops', 'sudadera', 'sudaderas', 'anillo', 'anillos', 'collar', 'collares', 'pulsera', 'pulseras', 'pendiente', 'pendientes', 'reloj', 'relojes', 'gorra', 'gorras', 'sombrero', 'sombreros', 'cinturón', 'cinturones', 'bolso', 'bolsos', 'mochila', 'mochilas', 'calcetín', 'calcetines', 'llavero', 'llaveros', 'pack', 'set'],
+                'camis': ['pantalón', 'pantalones', 'vestido', 'vestidos', 'falda', 'faldas', 'short', 'shorts', 'bermuda', 'bermudas', 'jersey', 'jerseys', 'zapato', 'zapatos', 'zapatilla', 'zapatillas', 'top', 'tops', 'sudadera', 'sudaderas', 'americana', 'americanas', 'chándal', 'chandal', 'chaqueta', 'chaquetas', 'anillo', 'anillos', 'collar', 'collares', 'pulsera', 'pulseras', 'pendiente', 'pendientes', 'reloj', 'relojes', 'gorra', 'gorras', 'sombrero', 'sombreros', 'cinturón', 'cinturones', 'bolso', 'bolsos', 'mochila', 'mochilas', 'calcetín', 'calcetines', 'llavero', 'llaveros', 'pack', 'set'],
+                'chaqueta': ['camiseta', 'camisetas', 'pantalón', 'pantalones', 'vestido', 'vestidos', 'falda', 'faldas', 'short', 'shorts', 'zapato', 'zapatos', 'zapatilla', 'zapatillas', 'top', 'tops', 'sudadera', 'sudaderas', 'anillo', 'anillos', 'collar', 'collares', 'pulsera', 'pulseras', 'pendiente', 'pendientes', 'reloj', 'relojes', 'gorra', 'gorras', 'sombrero', 'sombreros', 'cinturón', 'cinturones', 'bolso', 'bolsos', 'mochila', 'mochilas', 'calcetín', 'calcetines', 'llavero', 'llaveros', 'pack', 'set'],
+                'jersey': ['camiseta', 'camisetas', 'pantalón', 'pantalones', 'vestido', 'vestidos', 'falda', 'faldas', 'short', 'shorts', 'zapato', 'zapatos', 'zapatilla', 'zapatillas', 'chaqueta', 'chaquetas', 'top', 'tops', 'sudadera', 'sudaderas', 'anillo', 'anillos', 'collar', 'collares', 'pulsera', 'pulseras', 'pendiente', 'pendientes', 'reloj', 'relojes', 'gorra', 'gorras', 'sombrero', 'sombreros', 'cinturón', 'cinturones', 'bolso', 'bolsos', 'mochila', 'mochilas', 'calcetín', 'calcetines', 'llavero', 'llaveros', 'pack', 'set'],
+                'zapat': ['camiseta', 'camisetas', 'pantalón', 'pantalones', 'vestido', 'vestidos', 'falda', 'faldas', 'short', 'shorts', 'jersey', 'jerseys', 'chaqueta', 'chaquetas', 'camisa', 'camisas', 'top', 'tops', 'sudadera', 'sudaderas', 'anillo', 'anillos', 'collar', 'collares', 'pulsera', 'pulseras', 'pendiente', 'pendientes', 'reloj', 'relojes', 'gorra', 'gorras', 'sombrero', 'sombreros', 'cinturón', 'cinturones', 'bolso', 'bolsos', 'mochila', 'mochilas', 'calcetín', 'calcetines', 'llavero', 'llaveros', 'pack', 'set'],
+                'chandal': ['camiseta', 'camisetas', 'vestido', 'vestidos', 'falda', 'faldas', 'zapato', 'zapatos', 'zapatilla', 'zapatillas', 'top', 'tops', 'anillo', 'anillos', 'collar', 'collares', 'pulsera', 'pulseras', 'pendiente', 'pendientes', 'reloj', 'relojes', 'gorra', 'gorras', 'sombrero', 'sombreros', 'cinturón', 'cinturones', 'bolso', 'bolsos', 'mochila', 'mochilas', 'calcetín', 'calcetines', 'llavero', 'llaveros', 'pack', 'set'],
+                'chándal': ['camiseta', 'camisetas', 'vestido', 'vestidos', 'falda', 'faldas', 'zapato', 'zapatos', 'zapatilla', 'zapatillas', 'top', 'tops', 'anillo', 'anillos', 'collar', 'collares', 'pulsera', 'pulseras', 'pendiente', 'pendientes', 'reloj', 'relojes', 'gorra', 'gorras', 'sombrero', 'sombreros', 'cinturón', 'cinturones', 'bolso', 'bolsos', 'mochila', 'mochilas', 'calcetín', 'calcetines', 'llavero', 'llaveros', 'pack', 'set'],
+                'americana': ['camiseta', 'camisetas', 'pantalón', 'pantalones', 'vestido', 'vestidos', 'falda', 'faldas', 'zapato', 'zapatos', 'zapatilla', 'zapatillas', 'top', 'tops', 'sudadera', 'sudaderas', 'anillo', 'anillos', 'collar', 'collares', 'pulsera', 'pulseras', 'pendiente', 'pendientes', 'reloj', 'relojes', 'gorra', 'gorras', 'sombrero', 'sombreros', 'cinturón', 'cinturones', 'bolso', 'bolsos', 'mochila', 'mochilas', 'calcetín', 'calcetines', 'llavero', 'llaveros', 'pack', 'set']
+            };
+
+            // Función para verificar si un producto contiene términos contradictorios
+            const hasContradictoryTerms = (productName: string, searchTerm: string): boolean => {
+                const productNameLower = productName.toLowerCase();
+
+                // Determinar qué término principal estamos buscando
+                let mainSearchTerm = '';
+                for (const [key, expansions] of Object.entries(termExpansions)) {
+                    if (searchTerm.includes(key)) {
+                        mainSearchTerm = key;
+                        break;
+                    }
+                }
+
+                // Si no encontramos expansión, usar el término directo
+                if (!mainSearchTerm) {
+                    // Buscar en contradictoryTerms por coincidencia parcial
+                    for (const key of Object.keys(contradictoryTerms)) {
+                        if (searchTerm.includes(key)) {
+                            mainSearchTerm = key;
+                            break;
+                        }
+                    }
+                }
+
+                // Si tenemos términos contradictorios definidos para este término
+                if (mainSearchTerm && contradictoryTerms[mainSearchTerm]) {
+                    const contradictory = contradictoryTerms[mainSearchTerm];
+
+                    return contradictory.some((term: string) => {
+                        // Para términos específicos, ser más preciso para evitar falsos positivos
+                        const preciseTerms = ['top', 'sudadera', 'sudaderas', 'americana', 'americanas', 'chándal', 'chandal', 'chaqueta', 'chaquetas', 'pack', 'set', 'llavero', 'llaveros'];
+
+                        if (preciseTerms.includes(term)) {
+                            // Usar búsqueda de palabra completa para términos precisos
+                            const regex = new RegExp(`\\b${term}\\b`, 'i');
+                            return regex.test(productNameLower);
+                        }
+
+                        return productNameLower.includes(term);
+                    });
+                }
+
+                return false;
+            };
+
+            // Buscar si hay una expansión de término
+            let searchTerms = [searchLower];
+            for (const [key, expansions] of Object.entries(termExpansions)) {
+                if (searchLower.includes(key)) {
+                    searchTerms = expansions;
+                    break;
+                }
+            }
+
+
+
+            // Crear condiciones de búsqueda más precisas
+            const createSearchConditions = (alias: string) => {
+                const conditions: string[] = [];
+                const parameters: any = {};
+
+                searchTerms.forEach((term, index) => {
+                    const paramName = `searchTerm${index}`;
+                    // Búsqueda exacta al inicio (mayor relevancia)
+                    conditions.push(`LOWER(${alias}.name) LIKE :${paramName}Start`);
+                    parameters[`${paramName}Start`] = `${term}%`;
+
+                    // Búsqueda de palabra completa
+                    conditions.push(`LOWER(${alias}.name) LIKE :${paramName}Word`);
+                    parameters[`${paramName}Word`] = `% ${term}%`;
+
+                    // Solo si el término es largo, permitir búsqueda parcial
+                    if (term.length > 3) {
+                        conditions.push(`LOWER(${alias}.name) LIKE :${paramName}Partial`);
+                        parameters[`${paramName}Partial`] = `%${term}%`;
+                    }
+                });
+
+                return { conditions: conditions.join(' OR '), parameters };
+            };
+
+            // Paso 1: Buscar productos por nombre con scoring de relevancia
+            const productSearchConditions = createSearchConditions('product');
+
             const productQuery = this.productRepository
                 .createQueryBuilder('product')
                 .leftJoin('product.subcategory', 'subcategory')
                 .select([
                     'product.product_id AS product_id',
-                    'product.name AS name'
+                    'product.name AS name',
+                    // Calcular score de relevancia
+                    `CASE 
+        ${searchTerms.map((term, index) =>
+                        `WHEN LOWER(product.name) LIKE '${term}%' THEN ${100 - index * 10}
+             WHEN LOWER(product.name) LIKE '% ${term}%' THEN ${80 - index * 10}
+             WHEN LOWER(product.name) LIKE '%${term}%' THEN ${60 - index * 10}`
+                    ).join(' ')}
+        ELSE 50 
+    END AS relevance_score`
                 ])
                 .where('product.discard = false')
-                .andWhere('LOWER(product.name) LIKE :searchText', {
-                    searchText: `%${searchLower}%`
-                });
+                .andWhere(`(${productSearchConditions.conditions})`)
+                .setParameters(productSearchConditions.parameters);
 
             if (categoryIds && categoryIds.length > 0) {
                 productQuery.andWhere('product.category_id IN (:...categoryIds)', { categoryIds });
             }
 
-            // Paso 2: Buscar subcategorías cuyo nombre coincida
+            // Paso 2: Buscar subcategorías que coincidan con el término de búsqueda
+            const subcategorySearchConditions = createSearchConditions('subcategory');
+
             const matchingSubcategories = await this.subcategoryRepository
                 .createQueryBuilder('subcategory')
                 .select(['subcategory.subcategory_id'])
-                .where('LOWER(subcategory.name) LIKE :searchText', {
-                    searchText: `%${searchLower}%`
-                })
+                .where(`(${subcategorySearchConditions.conditions})`)
+                .setParameters(subcategorySearchConditions.parameters)
                 .getMany();
 
             const subcategoryIds = matchingSubcategories.map(sc => sc.subcategory_id);
 
-            // Paso 3: Buscar productos que pertenezcan a esas subcategorías
-            const subcategoryProductQuery = this.productRepository
-                .createQueryBuilder('product')
-                .select([
-                    'product.product_id AS product_id',
-                    'product.name AS name'
-                ])
-                .where('product.discard = false')
-                .andWhere('product.subcategory_id IN (:...subcategoryIds)', { subcategoryIds });
+            let allProducts: any[] = [];
 
-            if (categoryIds && categoryIds.length > 0) {
-                subcategoryProductQuery.andWhere('product.category_id IN (:...categoryIds)', { categoryIds });
+            // Primero obtener productos que coinciden por nombre
+            const productsByName = await productQuery
+                .orderBy('relevance_score', 'DESC')
+                .addOrderBy('product.name', 'ASC')
+                .getRawMany();
+
+            // FILTRAR PRODUCTOS POR NOMBRE - aplicar filtro de términos contradictorios
+            const filteredProductsByName = productsByName.filter(product =>
+                !hasContradictoryTerms(product.name, searchLower)
+            );
+
+            allProducts = [...filteredProductsByName];
+
+            // Si encontramos subcategorías coincidentes, buscar productos en esas subcategorías
+            if (subcategoryIds.length > 0) {
+                const subcategoryProductQuery = this.productRepository
+                    .createQueryBuilder('product')
+                    .select([
+                        'product.product_id AS product_id',
+                        'product.name AS name',
+                        '70 AS relevance_score' // Relevancia media para coincidencias por subcategoría
+                    ])
+                    .where('product.discard = false')
+                    .andWhere('product.subcategory_id IN (:...subcategoryIds)', { subcategoryIds });
+
+                if (categoryIds && categoryIds.length > 0) {
+                    subcategoryProductQuery.andWhere('product.category_id IN (:...categoryIds)', { categoryIds });
+                }
+
+                const productsBySubcategory = await subcategoryProductQuery
+                    .orderBy('product.name', 'ASC')
+                    .getRawMany();
+
+                // Filtrar productos de subcategoría que no contengan términos contradictorios
+                const validSubcategoryProducts = productsBySubcategory.filter(product =>
+                    !hasContradictoryTerms(product.name, searchLower)
+                );
+
+                // Añadir productos de subcategoría que no están ya en la lista por nombre
+                validSubcategoryProducts.forEach(subcatProduct => {
+                    const exists = allProducts.some(p => p.product_id === subcatProduct.product_id);
+                    if (!exists) {
+                        allProducts.push(subcatProduct);
+                    }
+                });
             }
 
-            // Paso 4: Combinar ambos resultados usando UNION
-            const combinedQuery = this.productRepository.manager
-                .createQueryBuilder()
-                .select(['product_id as id', 'name'])
-                .from(
-                    `(${productQuery.getQuery()} UNION ${subcategoryProductQuery.getQuery()})`,
-                    'combined'
-                )
-                .setParameters({
-                    ...productQuery.getParameters(),
-                    ...subcategoryProductQuery.getParameters()
-                });
+            // Eliminar duplicados y ordenar por relevancia
+            const uniqueProducts = allProducts.reduce((acc: any[], current: any) => {
+                const existing = acc.find(p => p.product_id === current.product_id);
+                if (!existing || current.relevance_score > existing.relevance_score) {
+                    if (existing) {
+                        const index = acc.indexOf(existing);
+                        acc[index] = current;
+                    } else {
+                        acc.push(current);
+                    }
+                }
+                return acc;
+            }, []);
 
-            // Ejecutar la consulta combinada
-            const products = await combinedQuery.getRawMany();
+            // Ordenar por relevancia
+            uniqueProducts.sort((a, b) => {
+                if (b.relevance_score !== a.relevance_score) {
+                    return b.relevance_score - a.relevance_score;
+                }
+                return a.name.localeCompare(b.name);
+            });
 
-            // Paso 5: Obtener imágenes principales
+            // Obtener imágenes principales
             const productsWithImages = await Promise.all(
-                products.map(async (product) => {
-                    const mainImage = await this.getMainImageByProductId(product.id);
+                uniqueProducts.map(async (product) => {
+                    const mainImage = await this.getMainImageByProductId(product.product_id);
                     return {
-                        id: product.id,
+                        id: product.product_id,
                         name: product.name,
-                        mainImage: mainImage?.image_url || null
+                        mainImage: mainImage?.image_url || null,
+                        relevance: product.relevance_score
                     };
                 })
             );
 
+
             return productsWithImages;
+
         } catch (error) {
             console.error('Error searching products:', error);
             return [];
         }
     }
 
-
-
-
     async getProductsWithBasicInfo(
         searchText?: string,
         categoryIds?: number[]
     ): Promise<{ product_id: number, name: string, price: number, main_image: string | null }[]> {
         try {
-            const searchLower = searchText?.toLowerCase() ?? '';
+            if (!searchText || searchText.trim().length < 2) return [];
 
-            // Paso 1: Query por nombre del producto
+            // Normalizar el texto de búsqueda
+            const searchLower = searchText.toLowerCase().trim();
+
+            // Expandir términos comunes para mejorar la búsqueda (MISMA LÓGICA)
+            const termExpansions: { [key: string]: string[] } = {
+                'pant': ['pantalón', 'pantalones'],
+                'camiset': ['camiseta', 'camisetas'],
+                'sudadera': ['sudadera', 'sudaderas'],
+                'zapat': ['zapato', 'zapatos', 'zapatilla', 'zapatillas'],
+                'jersey': ['jersey', 'jerseys', 'suéter'],
+                'falda': ['falda', 'faldas'],
+                'camis': ['camisa', 'camisas'],
+                'chaqueta': ['chaqueta', 'chaquetas', 'cazadora', 'chándal', 'chandal', 'americana', 'americanas'],
+                'chandal': ['chaqueta', 'chaquetas', 'cazadora', 'chándal', 'chandal', 'americana', 'americanas'],
+                'chándal': ['chaqueta', 'chaquetas', 'cazadora', 'chándal', 'chandal', 'americana', 'americanas'],
+                'americana': ['chaqueta', 'chaquetas', 'cazadora', 'chándal', 'chandal', 'americana', 'americanas']
+            };
+
+            // Lista completa de términos contradictorios (MISMA LÓGICA)
+            const contradictoryTerms: { [key: string]: string[] } = {
+                'pant': ['camiseta', 'camisetas', 'vestido', 'vestidos', 'falda', 'faldas', 'top', 'tops', 'camisa', 'camisas', 'jersey', 'jerseys', 'zapato', 'zapatos', 'zapatilla', 'zapatillas', 'chaqueta', 'chaquetas', 'sudadera', 'sudaderas', 'anillo', 'anillos', 'collar', 'collares', 'pulsera', 'pulseras', 'pendiente', 'pendientes', 'reloj', 'relojes', 'gorra', 'gorras', 'sombrero', 'sombreros', 'cinturón', 'cinturones', 'bolso', 'bolsos', 'mochila', 'mochilas', 'calcetín', 'calcetines', 'llavero', 'llaveros', 'pack', 'set'],
+                'camiset': ['pantalón', 'pantalones', 'vestido', 'vestidos', 'falda', 'faldas', 'short', 'shorts', 'bermuda', 'bermudas', 'jersey', 'jerseys', 'zapato', 'zapatos', 'zapatilla', 'zapatillas', 'top', 'tops', 'body', 'bodies', 'sudadera', 'sudaderas', 'anillo', 'anillos', 'collar', 'collares', 'pulsera', 'pulseras', 'pendiente', 'pendientes', 'reloj', 'relojes', 'gorra', 'gorras', 'sombrero', 'sombreros', 'cinturón', 'cinturones', 'bolso', 'bolsos', 'mochila', 'mochilas', 'calcetín', 'calcetines', 'llavero', 'llaveros', 'pack', 'set'],
+                'sudadera': ['camiseta', 'camisetas', 'pantalón', 'pantalones', 'vestido', 'vestidos', 'falda', 'faldas', 'zapato', 'zapatos', 'zapatilla', 'zapatillas', 'top', 'tops', 'body', 'bodies', 'camisa', 'camisas', 'anillo', 'anillos', 'collar', 'collares', 'pulsera', 'pulseras', 'pendiente', 'pendientes', 'reloj', 'relojes', 'gorra', 'gorras', 'sombrero', 'sombreros', 'cinturón', 'cinturones', 'bolso', 'bolsos', 'mochila', 'mochilas', 'calcetín', 'calcetines', 'llavero', 'llaveros', 'pack', 'set'],
+                'vestido': ['camiseta', 'camisetas', 'pantalón', 'pantalones', 'falda', 'faldas', 'short', 'shorts', 'camisa', 'camisas', 'jersey', 'jerseys', 'zapato', 'zapatos', 'zapatilla', 'zapatillas', 'chaqueta', 'chaquetas', 'top', 'tops', 'sudadera', 'sudaderas', 'anillo', 'anillos', 'collar', 'collares', 'pulsera', 'pulseras', 'pendiente', 'pendientes', 'reloj', 'relojes', 'gorra', 'gorras', 'sombrero', 'sombreros', 'cinturón', 'cinturones', 'bolso', 'bolsos', 'mochila', 'mochilas', 'calcetín', 'calcetines', 'llavero', 'llaveros', 'pack', 'set'],
+                'falda': ['camiseta', 'camisetas', 'pantalón', 'pantalones', 'vestido', 'vestidos', 'short', 'shorts', 'camisa', 'camisas', 'jersey', 'jerseys', 'zapato', 'zapatos', 'zapatilla', 'zapatillas', 'chaqueta', 'chaquetas', 'top', 'tops', 'sudadera', 'sudaderas', 'anillo', 'anillos', 'collar', 'collares', 'pulsera', 'pulseras', 'pendiente', 'pendientes', 'reloj', 'relojes', 'gorra', 'gorras', 'sombrero', 'sombreros', 'cinturón', 'cinturones', 'bolso', 'bolsos', 'mochila', 'mochilas', 'calcetín', 'calcetines', 'llavero', 'llaveros', 'pack', 'set'],
+                'camis': ['pantalón', 'pantalones', 'vestido', 'vestidos', 'falda', 'faldas', 'short', 'shorts', 'bermuda', 'bermudas', 'jersey', 'jerseys', 'zapato', 'zapatos', 'zapatilla', 'zapatillas', 'top', 'tops', 'sudadera', 'sudaderas', 'americana', 'americanas', 'chándal', 'chandal', 'chaqueta', 'chaquetas', 'anillo', 'anillos', 'collar', 'collares', 'pulsera', 'pulseras', 'pendiente', 'pendientes', 'reloj', 'relojes', 'gorra', 'gorras', 'sombrero', 'sombreros', 'cinturón', 'cinturones', 'bolso', 'bolsos', 'mochila', 'mochilas', 'calcetín', 'calcetines', 'llavero', 'llaveros', 'pack', 'set'],
+                'chaqueta': ['camiseta', 'camisetas', 'pantalón', 'pantalones', 'vestido', 'vestidos', 'falda', 'faldas', 'short', 'shorts', 'zapato', 'zapatos', 'zapatilla', 'zapatillas', 'top', 'tops', 'sudadera', 'sudaderas', 'anillo', 'anillos', 'collar', 'collares', 'pulsera', 'pulseras', 'pendiente', 'pendientes', 'reloj', 'relojes', 'gorra', 'gorras', 'sombrero', 'sombreros', 'cinturón', 'cinturones', 'bolso', 'bolsos', 'mochila', 'mochilas', 'calcetín', 'calcetines', 'llavero', 'llaveros', 'pack', 'set'],
+                'jersey': ['camiseta', 'camisetas', 'pantalón', 'pantalones', 'vestido', 'vestidos', 'falda', 'faldas', 'short', 'shorts', 'zapato', 'zapatos', 'zapatilla', 'zapatillas', 'chaqueta', 'chaquetas', 'top', 'tops', 'sudadera', 'sudaderas', 'anillo', 'anillos', 'collar', 'collares', 'pulsera', 'pulseras', 'pendiente', 'pendientes', 'reloj', 'relojes', 'gorra', 'gorras', 'sombrero', 'sombreros', 'cinturón', 'cinturones', 'bolso', 'bolsos', 'mochila', 'mochilas', 'calcetín', 'calcetines', 'llavero', 'llaveros', 'pack', 'set'],
+                'zapat': ['camiseta', 'camisetas', 'pantalón', 'pantalones', 'vestido', 'vestidos', 'falda', 'faldas', 'short', 'shorts', 'jersey', 'jerseys', 'chaqueta', 'chaquetas', 'camisa', 'camisas', 'top', 'tops', 'sudadera', 'sudaderas', 'anillo', 'anillos', 'collar', 'collares', 'pulsera', 'pulseras', 'pendiente', 'pendientes', 'reloj', 'relojes', 'gorra', 'gorras', 'sombrero', 'sombreros', 'cinturón', 'cinturones', 'bolso', 'bolsos', 'mochila', 'mochilas', 'calcetín', 'calcetines', 'llavero', 'llaveros', 'pack', 'set'],
+                'chandal': ['camiseta', 'camisetas', 'vestido', 'vestidos', 'falda', 'faldas', 'zapato', 'zapatos', 'zapatilla', 'zapatillas', 'top', 'tops', 'anillo', 'anillos', 'collar', 'collares', 'pulsera', 'pulseras', 'pendiente', 'pendientes', 'reloj', 'relojes', 'gorra', 'gorras', 'sombrero', 'sombreros', 'cinturón', 'cinturones', 'bolso', 'bolsos', 'mochila', 'mochilas', 'calcetín', 'calcetines', 'llavero', 'llaveros', 'pack', 'set'],
+                'chándal': ['camiseta', 'camisetas', 'vestido', 'vestidos', 'falda', 'faldas', 'zapato', 'zapatos', 'zapatilla', 'zapatillas', 'top', 'tops', 'anillo', 'anillos', 'collar', 'collares', 'pulsera', 'pulseras', 'pendiente', 'pendientes', 'reloj', 'relojes', 'gorra', 'gorras', 'sombrero', 'sombreros', 'cinturón', 'cinturones', 'bolso', 'bolsos', 'mochila', 'mochilas', 'calcetín', 'calcetines', 'llavero', 'llaveros', 'pack', 'set'],
+                'americana': ['camiseta', 'camisetas', 'pantalón', 'pantalones', 'vestido', 'vestidos', 'falda', 'faldas', 'zapato', 'zapatos', 'zapatilla', 'zapatillas', 'top', 'tops', 'sudadera', 'sudaderas', 'anillo', 'anillos', 'collar', 'collares', 'pulsera', 'pulseras', 'pendiente', 'pendientes', 'reloj', 'relojes', 'gorra', 'gorras', 'sombrero', 'sombreros', 'cinturón', 'cinturones', 'bolso', 'bolsos', 'mochila', 'mochilas', 'calcetín', 'calcetines', 'llavero', 'llaveros', 'pack', 'set']
+            };
+
+            // Función para verificar si un producto contiene términos contradictorios (MISMA LÓGICA)
+            const hasContradictoryTerms = (productName: string, searchTerm: string): boolean => {
+                const productNameLower = productName.toLowerCase();
+
+                // Determinar qué término principal estamos buscando
+                let mainSearchTerm = '';
+                for (const [key, expansions] of Object.entries(termExpansions)) {
+                    if (searchTerm.includes(key)) {
+                        mainSearchTerm = key;
+                        break;
+                    }
+                }
+
+                // Si no encontramos expansión, usar el término directo
+                if (!mainSearchTerm) {
+                    // Buscar en contradictoryTerms por coincidencia parcial
+                    for (const key of Object.keys(contradictoryTerms)) {
+                        if (searchTerm.includes(key)) {
+                            mainSearchTerm = key;
+                            break;
+                        }
+                    }
+                }
+
+                // Si tenemos términos contradictorios definidos para este término
+                if (mainSearchTerm && contradictoryTerms[mainSearchTerm]) {
+                    const contradictory = contradictoryTerms[mainSearchTerm];
+
+                    return contradictory.some((term: string) => {
+                        // Para términos específicos, ser más preciso para evitar falsos positivos
+                        const preciseTerms = ['top', 'sudadera', 'sudaderas', 'americana', 'americanas', 'chándal', 'chandal', 'chaqueta', 'chaquetas', 'pack', 'set', 'llavero', 'llaveros'];
+
+                        if (preciseTerms.includes(term)) {
+                            // Usar búsqueda de palabra completa para términos precisos
+                            const regex = new RegExp(`\\b${term}\\b`, 'i');
+                            return regex.test(productNameLower);
+                        }
+
+                        return productNameLower.includes(term);
+                    });
+                }
+
+                return false;
+            };
+
+            // Buscar si hay una expansión de término (MISMA LÓGICA)
+            let searchTerms = [searchLower];
+            for (const [key, expansions] of Object.entries(termExpansions)) {
+                if (searchLower.includes(key)) {
+                    searchTerms = expansions;
+                    break;
+                }
+            }
+
+
+
+            // Crear condiciones de búsqueda más precisas (MISMA LÓGICA)
+            const createSearchConditions = (alias: string) => {
+                const conditions: string[] = [];
+                const parameters: any = {};
+
+                searchTerms.forEach((term, index) => {
+                    const paramName = `searchTerm${index}`;
+                    // Búsqueda exacta al inicio (mayor relevancia)
+                    conditions.push(`LOWER(${alias}.name) LIKE :${paramName}Start`);
+                    parameters[`${paramName}Start`] = `${term}%`;
+
+                    // Búsqueda de palabra completa
+                    conditions.push(`LOWER(${alias}.name) LIKE :${paramName}Word`);
+                    parameters[`${paramName}Word`] = `% ${term}%`;
+
+                    // Solo si el término es largo, permitir búsqueda parcial
+                    if (term.length > 3) {
+                        conditions.push(`LOWER(${alias}.name) LIKE :${paramName}Partial`);
+                        parameters[`${paramName}Partial`] = `%${term}%`;
+                    }
+                });
+
+                return { conditions: conditions.join(' OR '), parameters };
+            };
+
+            // Paso 1: Buscar productos por nombre con scoring de relevancia
+            const productSearchConditions = createSearchConditions('product');
+
             const productQuery = this.productRepository
                 .createQueryBuilder('product')
+                .leftJoin('product.subcategory', 'subcategory')
                 .leftJoin(
                     'product.images',
                     'image',
@@ -551,69 +834,124 @@ export class ProductService {
                     'product.product_id AS product_id',
                     'product.name AS name',
                     'product.price AS price',
-                    'image.image_url AS main_image'
+                    'image.image_url AS main_image',
+                    // Calcular score de relevancia
+                    `CASE 
+    ${searchTerms.map((term, index) =>
+                        `WHEN LOWER(product.name) LIKE '${term}%' THEN ${100 - index * 10}
+         WHEN LOWER(product.name) LIKE '% ${term}%' THEN ${80 - index * 10}
+         WHEN LOWER(product.name) LIKE '%${term}%' THEN ${60 - index * 10}`
+                    ).join(' ')}
+    ELSE 50 
+END AS relevance_score`
                 ])
                 .where('product.discard = false')
-                .andWhere('LOWER(product.name) LIKE :searchText', { searchText: `%${searchLower}%` });
+                .andWhere(`(${productSearchConditions.conditions})`)
+                .setParameters(productSearchConditions.parameters);
 
             if (categoryIds && categoryIds.length > 0) {
                 productQuery.andWhere('product.category_id IN (:...categoryIds)', { categoryIds });
             }
 
-            // Paso 2: Buscar subcategorías cuyo nombre coincida
+            // Paso 2: Buscar subcategorías que coincidan con el término de búsqueda
+            const subcategorySearchConditions = createSearchConditions('subcategory');
+
             const matchingSubcategories = await this.subcategoryRepository
                 .createQueryBuilder('subcategory')
                 .select(['subcategory.subcategory_id'])
-                .where('LOWER(subcategory.name) LIKE :searchText', { searchText: `%${searchLower}%` })
+                .where(`(${subcategorySearchConditions.conditions})`)
+                .setParameters(subcategorySearchConditions.parameters)
                 .getMany();
 
             const subcategoryIds = matchingSubcategories.map(sc => sc.subcategory_id);
 
-            // Paso 3: Query por subcategorías coincidentes
-            const subcategoryProductQuery = this.productRepository
-                .createQueryBuilder('product')
-                .leftJoin(
-                    'product.images',
-                    'image',
-                    'image.is_main = :isMain',
-                    { isMain: true }
-                )
-                .select([
-                    'product.product_id AS product_id',
-                    'product.name AS name',
-                    'product.price AS price',
-                    'image.image_url AS main_image'
-                ])
-                .where('product.discard = false')
-                .andWhere('product.subcategory_id IN (:...subcategoryIds)', { subcategoryIds });
+            let allProducts: any[] = [];
 
-            if (categoryIds && categoryIds.length > 0) {
-                subcategoryProductQuery.andWhere('product.category_id IN (:...categoryIds)', { categoryIds });
+            // Primero obtener productos que coinciden por nombre
+            const productsByName = await productQuery
+                .orderBy('relevance_score', 'DESC')
+                .addOrderBy('product.name', 'ASC')
+                .getRawMany();
+
+            // FILTRAR PRODUCTOS POR NOMBRE - aplicar filtro de términos contradictorios
+            const filteredProductsByName = productsByName.filter(product =>
+                !hasContradictoryTerms(product.name, searchLower)
+            );
+
+            allProducts = [...filteredProductsByName];
+
+            // Si encontramos subcategorías coincidentes, buscar productos en esas subcategorías
+            if (subcategoryIds.length > 0) {
+                const subcategoryProductQuery = this.productRepository
+                    .createQueryBuilder('product')
+                    .leftJoin(
+                        'product.images',
+                        'image',
+                        'image.is_main = :isMain',
+                        { isMain: true }
+                    )
+                    .select([
+                        'product.product_id AS product_id',
+                        'product.name AS name',
+                        'product.price AS price',
+                        'image.image_url AS main_image',
+                        '70 AS relevance_score' // Relevancia media para coincidencias por subcategoría
+                    ])
+                    .where('product.discard = false')
+                    .andWhere('product.subcategory_id IN (:...subcategoryIds)', { subcategoryIds });
+
+                if (categoryIds && categoryIds.length > 0) {
+                    subcategoryProductQuery.andWhere('product.category_id IN (:...categoryIds)', { categoryIds });
+                }
+
+                const productsBySubcategory = await subcategoryProductQuery
+                    .orderBy('product.name', 'ASC')
+                    .getRawMany();
+
+                // Filtrar productos de subcategoría que no contengan términos contradictorios
+                const validSubcategoryProducts = productsBySubcategory.filter(product =>
+                    !hasContradictoryTerms(product.name, searchLower)
+                );
+
+                // Añadir productos de subcategoría que no están ya en la lista por nombre
+                validSubcategoryProducts.forEach(subcatProduct => {
+                    const exists = allProducts.some(p => p.product_id === subcatProduct.product_id);
+                    if (!exists) {
+                        allProducts.push(subcatProduct);
+                    }
+                });
             }
 
-            // Paso 4: Combinar ambas queries
-            const combinedQuery = this.productRepository.manager
-                .createQueryBuilder()
-                .select(['product_id', 'name', 'price', 'main_image'])
-                .from(
-                    `(${productQuery.getQuery()} UNION ${subcategoryProductQuery.getQuery()})`,
-                    'combined'
-                )
-                .setParameters({
-                    ...productQuery.getParameters(),
-                    ...subcategoryProductQuery.getParameters()
-                })
-                .orderBy('name', 'ASC');
+            // Eliminar duplicados y ordenar por relevancia
+            const uniqueProducts = allProducts.reduce((acc: any[], current: any) => {
+                const existing = acc.find(p => p.product_id === current.product_id);
+                if (!existing || current.relevance_score > existing.relevance_score) {
+                    if (existing) {
+                        const index = acc.indexOf(existing);
+                        acc[index] = current;
+                    } else {
+                        acc.push(current);
+                    }
+                }
+                return acc;
+            }, []);
 
-            const rawResults = await combinedQuery.getRawMany();
+            // Ordenar por relevancia
+            uniqueProducts.sort((a, b) => {
+                if (b.relevance_score !== a.relevance_score) {
+                    return b.relevance_score - a.relevance_score;
+                }
+                return a.name.localeCompare(b.name);
+            });
 
-            // Paso 5: Formatear resultados
-            return rawResults.map(row => ({
-                product_id: row.product_id,
-                name: row.name,
-                price: row.price,
-                main_image: row.main_image || null
+            // Formatear resultados finales
+            return uniqueProducts.map(product => ({
+                product_id: product.product_id,
+                name: product.name,
+                price: product.price,
+                main_image: product.main_image || null
             }));
+
         } catch (error) {
             console.error('Error fetching products with basic info:', error);
             return [];

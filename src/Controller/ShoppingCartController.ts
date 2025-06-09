@@ -11,6 +11,7 @@ export class ShoppingCartController {
     // Añadir un producto al carrito
     async addProductToOrder(req: Request, res: Response): Promise<void> {
         const { orderId, productId, quantity, price, size, color, discount_percentage } = req.body;
+
         if (!orderId || !productId || !quantity || !price) {
             res.status(400).json({
                 success: false,
@@ -112,8 +113,7 @@ export class ShoppingCartController {
     async updateOrderDetailQuantity(req: Request, res: Response): Promise<void> {
         const { itemId } = req.params;
         const { quantity } = req.body;
-        console.log("ID" + itemId);
-        console.log(quantity);
+
         try {
             const cartDetail = await this.orderDetailService.updateOrderDetailQuantity(
                 parseInt(itemId),

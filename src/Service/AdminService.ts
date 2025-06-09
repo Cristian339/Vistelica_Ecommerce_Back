@@ -71,7 +71,7 @@ export class AdminService {
 
         if (user && user.banned && user.banned_at?.getTime() === originalBanDate.getTime()) {
             await this.unbanUser(userId);
-            console.log(`Usuario ${userId} desbaneado automáticamente`);
+
         }
     }
 
@@ -94,7 +94,7 @@ export class AdminService {
                 const banDays = Math.floor((now.getTime() - user.banned_at.getTime()) / (24 * 60 * 60 * 1000));
                 if (banDays >= 3) { // Asumimos que el baneo mínimo es de 3 días
                     await this.unbanUser(user.user_id);
-                    console.log(`Usuario ${user.user_id} desbaneado automáticamente (baneo expirado)`);
+
                 }
             }
         }

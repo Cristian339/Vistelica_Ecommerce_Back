@@ -108,7 +108,7 @@ export class StyleService {
             // Mapear productos y extraer solo la imagen principal
             return style.products.map(product => {
                 const mainImage = product.images?.find(img => img.is_main);
-                console.log(`Product ID: ${product.product_id}, Main Image: ${mainImage ? mainImage.image_url : 'No main image'}`);
+
                 return {
                     ...product,
                     main_image: mainImage ? mainImage.image_url : null,

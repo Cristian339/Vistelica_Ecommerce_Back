@@ -31,9 +31,9 @@ export class JWTService {
     async extractPerfilToken(token: string, userService: any): Promise<Profile> {
         try {
             if (!AppDataSource.isInitialized) {
-                console.log("Inicializando AppDataSource...");
+
                 await AppDataSource.initialize();
-                console.log("AppDataSource inicializado correctamente");
+
             }
 
             const tokenWithoutHeader = token.substring(7);
@@ -48,18 +48,17 @@ export class JWTService {
             if (!user) {
                 throw new Error('Usuario no encontrado');
             }
-            console.log("Usuario encontrado:", user);
-            console.log("Buscando perfil para user_id:", user.user_id);
+
 
             const profileRepository = AppDataSource.getRepository(Profile);
 
-            console.log("Ejecutando consulta con ID:", user.user_id);
+
             const profile = await profileRepository.findOne({
                 where: { user: { user_id: user.user_id } },
                 relations: ["user"]
             });
 
-            console.log("Resultado de la consulta:", profile);
+
 
             if (!profile) {
                 throw new Error('Perfil no encontrado para el usuario con ID: ' + user.user_id);

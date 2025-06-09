@@ -6,7 +6,7 @@ const productReviewController = new ProductReviewController();
 
 // Crear una nueva reseña
 router.post("/review", async (req: Request, res: Response, next: NextFunction) => {
-    console.log("POST /reviews");
+
     try {
         await productReviewController.create(req, res);
     } catch (error) {
@@ -16,7 +16,7 @@ router.post("/review", async (req: Request, res: Response, next: NextFunction) =
 
 // Obtener todas las reseñas de un producto por ID
 router.get("/reviews/product/:productId", async (req: Request, res: Response, next: NextFunction) => {
-    console.log("GET /reviews/product/:productId");
+
     try {
         await productReviewController.getByProduct(req, res);
     } catch (error) {
@@ -26,7 +26,7 @@ router.get("/reviews/product/:productId", async (req: Request, res: Response, ne
 
 // Nueva ruta: Obtener reseñas por nombre de producto
 router.get("/reviews/product/name/:productName", async (req: Request, res: Response, next: NextFunction) => {
-    console.log("GET /reviews/product/name/:productName");
+
     try {
         await productReviewController.getByProductName(req, res);
     } catch (error) {
@@ -36,7 +36,7 @@ router.get("/reviews/product/name/:productName", async (req: Request, res: Respo
 
 // Obtener todas las reseñas de un usuario
 router.get("/reviews/user/:userId", async (req: Request, res: Response, next: NextFunction) => {
-    console.log("GET /reviews/user/:userId");
+
     try {
         await productReviewController.getByUser(req, res);
     } catch (error) {
@@ -46,7 +46,7 @@ router.get("/reviews/user/:userId", async (req: Request, res: Response, next: Ne
 
 // Eliminar una reseña
 router.delete("/reviews/:id", async (req: Request, res: Response, next: NextFunction) => {
-    console.log("DELETE /reviews/:id");
+
     try {
         await productReviewController.delete(req, res);
     } catch (error) {
