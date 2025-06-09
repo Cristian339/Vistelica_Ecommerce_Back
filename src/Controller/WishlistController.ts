@@ -41,12 +41,6 @@ export class WishlistController {
                 return res.status(400).json({ message: "Datos inválidos. Se requiere userId (autenticado) y product_id numérico." });
             }
 
-            // Verificar si el producto está en la wishlist antes de eliminarlo
-            const existingItem = await this.wishlistService.findWishlistItem(userId, product_id);
-            if (!existingItem) {
-                return res.status(404).json({ message: "El producto no está en la lista de deseos" });
-            }
-
             // Eliminar el producto de la wishlist
             await this.wishlistService.removeFromWishlist(userId, product_id);
             return res.status(200).json({ message: "Producto eliminado de la lista de deseos" });

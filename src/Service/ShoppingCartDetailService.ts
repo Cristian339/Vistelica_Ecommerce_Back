@@ -17,8 +17,33 @@ export class ShoppingCartDetailService {
         color: string | null = null,
         discount_percentage: number | null = null
     ): Promise<CartDetail> {
-
         try {
+            const productRepository = AppDataSource.getRepository(Products);
+            const product = await productRepository.findOne({
+                where: { product_id: productId },
+                relations: ["images"]
+            });
+
+            if (!product) {
+                throw new Error('Producto no encontrado');
+            }
+
+            // Si no se proporciona talla ni color, asignar los primeros disponibles
+            let finalSize = size;
+            let finalColor = color;
+
+            if (!size && !color && (product.sizes?.length > 0 || product.colors?.length > 0)) {
+                // Asignar primera talla disponible si existe
+                if (product.sizes?.length > 0) {
+                    finalSize = product.sizes[0];
+                }
+
+                // Asignar primer color disponible si existe
+                if (product.colors?.length > 0) {
+                    finalColor = product.colors[0];
+                }
+            }
+
             // Primero verificamos si ya existe un producto igual en el carrito
             const existingItems = await this.cartDetailRepository.find({
                 where: {
@@ -27,15 +52,13 @@ export class ShoppingCartDetailService {
                 },
                 relations: ["product"]
             });
-            console.log(1);
 
             // Buscamos un item que coincida en talla y color
             const existingItem = existingItems.find(item =>
-                item.size === size && item.color === color
+                item.size === finalSize && item.color === finalColor
             );
 
             if (existingItem) {
-                console.log(2);
                 // Si encontramos un item idéntico, actualizamos la cantidad
                 existingItem.quantity += quantity;
 
@@ -47,22 +70,17 @@ export class ShoppingCartDetailService {
                 return await this.cartDetailRepository.save(existingItem);
             }
 
-            console.log(3);
-
             // Si no existe un item idéntico, creamos uno nuevo
             const cart = { cart_id: cartId } as Cart;
-            const product = { product_id: productId } as Products;
-            console.log(4);
             const cartDetail = this.cartDetailRepository.create({
                 cart,
-                product,
+                product: { product_id: productId } as Products,
                 quantity,
                 price,
-                size,
-                color,
+                size: finalSize,
+                color: finalColor,
                 discount_percentage
             });
-            console.log("OTRA VEEEEEEEEEEE " + JSON.stringify(cartDetail));
 
             return await this.cartDetailRepository.save(cartDetail);
         } catch (error) {
