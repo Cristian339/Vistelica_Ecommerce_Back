@@ -14,7 +14,11 @@ export class UserController {
     private jwtService: JWTService = new JWTService();
 
     constructor() {
-        this.registerUser = this.registerUser.bind(this);
+        this.initiateRegistration = this.initiateRegistration.bind(this);
+        this.verifyRegistration = this.verifyRegistration.bind(this);
+        this.resendVerificationCode = this.resendVerificationCode.bind(this);
+        this.cancelRegistration = this.cancelRegistration.bind(this);
+        this.getRegistrationStatus = this.getRegistrationStatus.bind(this);
         this.login = this.login.bind(this);
     }
 
@@ -28,34 +32,220 @@ export class UserController {
         }
     }
 
-    async registerUser(req: Request, res: Response): Promise<Response> {
+    /**
+     * Inicia el proceso de registro enviando código de verificación
+     */
+    async initiateRegistration(req: Request, res: Response): Promise<Response> {
         try {
             if (!req.body.email) {
-                return res.status(400).json({message: "El email es obligatorio"});
+                return res.status(400).json({
+                    success: false,
+                    message: "El email es obligatorio"
+                });
             }
 
             if (!req.body.password) {
-                return res.status(400).json({message: "La contraseña es obligatoria"});
+                return res.status(400).json({
+                    success: false,
+                    message: "La contraseña es obligatoria"
+                });
             }
 
             const userDTO = new UserRegisterDTO(req.body);
             const errors = userDTO.validate();
 
             if (errors.length > 0) {
-                return res.status(400).json({errors});
+                return res.status(400).json({
+                    success: false,
+                    errors
+                });
             }
 
-            const user = await this.userService.createUser(userDTO);
-            return res.status(201).json(user);
+            const result = await this.userService.initiateRegistration(userDTO);
+
+            if (!result.success) {
+                return res.status(400).json(result);
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: result.message,
+                registrationToken: result.registrationToken
+            });
 
         } catch (error) {
+            console.error('Error en initiateRegistration:', error);
             if (error instanceof Error) {
-                return res.status(400).json({message: error.message});
+                return res.status(400).json({
+                    success: false,
+                    message: error.message
+                });
             }
-            return res.status(500).json({message: "Error al registrar usuario", error});
+            return res.status(500).json({
+                success: false,
+                message: "Error al iniciar el registro"
+            });
         }
     }
 
+    /**
+     * Verifica el código y completa el registro del usuario
+     */
+    async verifyRegistration(req: Request, res: Response): Promise<Response> {
+        try {
+            const { registrationToken, verificationCode } = req.body;
+
+            if (!registrationToken) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Token de registro es obligatorio"
+                });
+            }
+
+            if (!verificationCode) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Código de verificación es obligatorio"
+                });
+            }
+
+            const result = await this.userService.verifyAndCreateUser(
+                registrationToken,
+                verificationCode
+            );
+
+            if (!result.success) {
+                return res.status(400).json(result);
+            }
+
+            // Generar token JWT para el usuario recién creado
+            const token = this.jwtService.generateToken(result.user!);
+
+            return res.status(201).json({
+                success: true,
+                message: result.message,
+                user: result.user,
+                token
+            });
+
+        } catch (error) {
+            console.error('Error en verifyRegistration:', error);
+            if (error instanceof Error) {
+                return res.status(400).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+            return res.status(500).json({
+                success: false,
+                message: "Error al verificar el registro"
+            });
+        }
+    }
+
+    /**
+     * Reenvía el código de verificación
+     */
+    async resendVerificationCode(req: Request, res: Response): Promise<Response> {
+        try {
+            const { registrationToken } = req.body;
+
+            if (!registrationToken) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Token de registro es obligatorio"
+                });
+            }
+
+            const result = await this.userService.resendVerificationCode(registrationToken);
+
+            if (!result.success) {
+                return res.status(400).json(result);
+            }
+
+            return res.status(200).json(result);
+
+        } catch (error) {
+            console.error('Error en resendVerificationCode:', error);
+            return res.status(500).json({
+                success: false,
+                message: "Error al reenviar código de verificación"
+            });
+        }
+    }
+
+    /**
+     * Cancela un registro pendiente
+     */
+    async cancelRegistration(req: Request, res: Response): Promise<Response> {
+        try {
+            const { registrationToken } = req.body;
+
+            if (!registrationToken) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Token de registro es obligatorio"
+                });
+            }
+
+            const result = await this.userService.cancelRegistration(registrationToken);
+            return res.status(200).json(result);
+
+        } catch (error) {
+            console.error('Error en cancelRegistration:', error);
+            return res.status(500).json({
+                success: false,
+                message: "Error al cancelar registro"
+            });
+        }
+    }
+
+    /**
+     * Obtiene el estado de un registro pendiente
+     */
+    async getRegistrationStatus(req: Request, res: Response): Promise<Response> {
+        try {
+            const { registrationToken } = req.params;
+
+            if (!registrationToken) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Token de registro es obligatorio"
+                });
+            }
+
+            const status = await this.userService.getRegistrationStatus(registrationToken);
+            return res.status(200).json({
+                success: true,
+                status
+            });
+
+        } catch (error) {
+            console.error('Error en getRegistrationStatus:', error);
+            return res.status(500).json({
+                success: false,
+                message: "Error al obtener estado del registro"
+            });
+        }
+    }
+
+    // MÉTODO DEPRECADO - Mantener solo para compatibilidad
+    async registerUser(req: Request, res: Response): Promise<Response> {
+        return res.status(400).json({
+            success: false,
+            message: "Este método está deprecado. Usa /initiate-registration seguido de /verify-registration",
+            deprecated: true,
+            newEndpoints: {
+                step1: "/initiate-registration",
+                step2: "/verify-registration",
+                optional: {
+                    resend: "/resend-verification-code",
+                    cancel: "/cancel-registration",
+                    status: "/registration-status/:token"
+                }
+            }
+        });
+    }
 
     async getUserByToken(req: Request, res: Response): Promise<Response> {
         try {
@@ -109,8 +299,6 @@ export class UserController {
             });
         }
     }
-
-
 
     /**
      * Envía un código de verificación al email actual para autorizar el cambio de email
@@ -214,7 +402,6 @@ export class UserController {
         }
     }
 
-
     async login(req: Request, res: Response): Promise<Response> {
         try {
             if (!req.body.email) {
@@ -255,7 +442,6 @@ export class UserController {
             if (!email) {
                 return res.status(400).json({error: 'Email requerido'});
             }
-
 
             const userRepository = AppDataSource.getRepository(User);
             const user = await userRepository.findOne({
@@ -409,7 +595,6 @@ export class UserController {
         }
     }
 
-
     async socialAuth(req: Request, res: Response) {
         try {
             const { authorization } = req.headers;
@@ -442,8 +627,7 @@ export class UserController {
                 user: {
                     id: user.user_id,
                     email: user.email,
-                    // Se elimina username ya que no existe en la entidad User
-                    profilePicture: user.profile?.avatar // Cambiado de avatarUrl a avatar
+                    profilePicture: user.profile?.avatar
                 }
             });
         } catch (error: any) {
@@ -454,7 +638,6 @@ export class UserController {
 
     public async logout(req: Request, res: Response): Promise<void> {
         try {
-
             res.status(200).json({
                 success: true,
                 message: "Sesión cerrada exitosamente"
@@ -485,7 +668,6 @@ export class UserController {
             });
         }
     }
-
 
     /**
      * Elimina completamente un usuario y todos sus datos relacionados
