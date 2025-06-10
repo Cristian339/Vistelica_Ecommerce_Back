@@ -1,140 +1,207 @@
-import express, { Router, Request, Response, NextFunction } from "express";
-import { AdminController } from "../Controller/AdminController";
-import { OrderController } from "../Controller/OrderController";
-import { ReviewReportController } from "../Controller/ReviewReportController";
+import express, { Request, Response, NextFunction } from "express";
+import { UserController } from "../Controller/UserController";
+import { Auth } from "../Middleware/Auth";
 
-const router: Router = express.Router();
-const adminController = new AdminController();
-const orderController = new OrderController();
-const reviewReportController = new ReviewReportController();
+const router = express.Router();
+const userController = new UserController();
+const auth = new Auth(); // Create an instance of Auth
 
-router.get('/admin/orders', async (req: Request, res: Response, next: NextFunction) => {
+
+
+// Iniciar proceso de registro (envía código de verificación)
+router.post('/initiate-registration', async (req: Request, res: Response, next: NextFunction) => {
+    console.log('POST /initiate-registration');
     try {
-        await orderController.getAllOrders(req, res);
-    } catch (error) {
-        next(error);
-    }
-});
-// Marcar pedido como enviado
-router.post('/admin/orders/:id/shipped', async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        await orderController.markOrderAsShipped(req, res);
-    } catch (error) {
+        await userController.initiateRegistration(req, res);
+    } catch(error) {
         next(error);
     }
 });
 
-// Marcar pedido como entregado
-router.post('/admin/orders/:id/delivered', async (req: Request, res: Response, next: NextFunction) => {
+// Verificar código y completar registro
+router.post('/verify-registration', async (req: Request, res: Response, next: NextFunction) => {
+    console.log('POST /verify-registration');
     try {
-        await orderController.markOrderAsDelivered(req, res);
-    } catch (error) {
-        next(error);
-    }
-});
-// Usuarios baneados
-router.get('/admin/banned', async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        await adminController.getBannedUsers(req, res);
-    } catch (error) {
+        await userController.verifyRegistration(req, res);
+    } catch(error) {
         next(error);
     }
 });
 
-// Usuarios no baneados
-router.get('/admin/unbanned', async (req: Request, res: Response, next: NextFunction) => {
+// Reenviar código de verificación
+router.post('/resend-verification-code', async (req: Request, res: Response, next: NextFunction) => {
+    console.log('POST /resend-verification-code');
     try {
-        await adminController.getUnbannedUsers(req, res);
-    } catch (error) {
+        await userController.resendVerificationCode(req, res);
+    } catch(error) {
         next(error);
     }
 });
 
-// Banear usuario
-router.post('/admin/ban/:userId', async (req: Request, res: Response, next: NextFunction) => {
+// Cancelar registro pendiente
+router.post('/cancel-registration', async (req: Request, res: Response, next: NextFunction) => {
+    console.log('POST /cancel-registration');
     try {
-        await adminController.banUser(req, res);
-    } catch (error) {
+        await userController.cancelRegistration(req, res);
+    } catch(error) {
         next(error);
     }
 });
 
-// Desbanear usuario
-router.post('/admin/unban/:userId', async (req: Request, res: Response, next: NextFunction) => {
+// Obtener estado del registro
+router.get('/registration-status/:registrationToken', async (req: Request, res: Response, next: NextFunction) => {
+    console.log('GET /registration-status/:registrationToken');
     try {
-        await adminController.unbanUser(req, res);
-    } catch (error) {
+        await userController.getRegistrationStatus(req, res);
+    } catch(error) {
         next(error);
     }
 });
 
-import cors from 'cors';
-
-// Configuración de CORS
-const corsOptions = {
-    origin: 'http://localhost:3000',
-    optionsSuccessStatus: 200
-};
-
-// Aplica CORS solo a rutas específicas
-router.get('/admin/clients', cors(corsOptions), async (req: Request, res: Response, next: NextFunction) => {
+// ========== RUTA DEPRECADA (mantener para compatibilidad) ==========
+router.post('/register', async (req: Request, res: Response, next: NextFunction) => {
+    console.log('POST /register (DEPRECATED)');
     try {
-        await adminController.getClients(req, res);
-    } catch (error) {
+        await userController.registerUser(req, res);
+    } catch(error) {
         next(error);
     }
 });
 
-router.post('/admin/temp-ban/:userId', async (req: Request, res: Response, next: NextFunction) => {
+
+router.post("/user",
+    (req: Request, res: Response, next: NextFunction) => {
+        auth.authenticate(req, res, next);
+    },
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            await userController.getUserByToken(req, res);
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
+router.delete('/user',
+    (req: Request, res: Response, next: NextFunction) => {
+        auth.authenticate(req, res, next);
+    },
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            await userController.deleteUser(req, res);
+        } catch(error) {
+            next(error);
+        }
+    }
+);
+
+router.post('/login', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await adminController.tempBanUser(req, res);
-    } catch (error) {
+        await userController.login(req, res);
+    } catch(error) {
         next(error);
     }
 });
 
-// Listar vendedores
-router.get('/admin/sellers', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/reset-password-request', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await adminController.getSellers(req, res);
-    } catch (error) {
-        next(error);
-    }
-});
-// Obtener todas las reseñas reportadas (agrupadas por reseña)
-router.get('/admin/reviews/reported', async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        await reviewReportController.getReportedReviews(req, res);
-    } catch (error) {
+        await userController.requestPasswordReset(req, res);
+    } catch(error) {
         next(error);
     }
 });
 
-// Obtener todos los reportes individuales (vista detallada)
-router.get('/admin/reviews/reports', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/verify-reset-code', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await reviewReportController.getAllReports(req, res);
-    } catch (error) {
+        await userController.verifyResetCode(req, res);
+    } catch(error) {
         next(error);
     }
 });
 
-// Eliminar una reseña reportada (y todos sus reportes)
-router.delete('/admin/reviews/:reviewId', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/complete-password-reset', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await reviewReportController.deleteReview(req, res);
-    } catch (error) {
+        await userController.completePasswordReset(req, res);
+    } catch(error) {
         next(error);
     }
 });
 
-// Eliminar un reporte específico (mantener la reseña)
-router.delete('/admin/reports/:reportId', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/check-email', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await reviewReportController.deleteReport(req, res);
-    } catch (error) {
+        await userController.checkEmailAvailability(req, res);
+    } catch(error) {
         next(error);
     }
 });
+
+router.post('/check-phone', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await userController.checkPhoneAvailability(req, res);
+    } catch(error) {
+        next(error);
+    }
+});
+
+router.post('/social-auth', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await userController.socialAuth(req, res);
+    } catch(error) {
+        next(error);
+    }
+});
+
+router.post('/logout',
+    (req: Request, res: Response, next: NextFunction) => {
+        auth.authenticate(req, res, next);
+    },
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            await userController.logout(req, res);
+        } catch(error) {
+            next(error);
+        }
+    }
+);
+
+router.post('/verify-password',
+    (req: Request, res: Response, next: NextFunction) => {
+        auth.authenticate(req, res, next);
+    },
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            await userController.verifyPassword(req, res);
+        } catch(error) {
+            next(error);
+        }
+    }
+);
+
+router.post('/request-email-change',
+    (req: Request, res: Response, next: NextFunction) => {
+        auth.authenticate(req, res, next);
+    },
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            await userController.sendEmailChangeVerification(req, res);
+        } catch(error) {
+            next(error);
+        }
+    }
+);
+
+// Ruta para confirmar cambio de email con código
+router.post('/confirm-email-change',
+    (req: Request, res: Response, next: NextFunction) => {
+        auth.authenticate(req, res, next);
+    },
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            await userController.confirmEmailChange(req, res);
+        } catch(error) {
+            next(error);
+        }
+    }
+);
 
 export default router;
