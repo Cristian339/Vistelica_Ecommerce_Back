@@ -1,11 +1,12 @@
 import { AppDataSource } from '../Config/database';
-import { ProductImageDto } from '../DTO/ProductImageDto';
+
 import { Color, Products, Size } from '../Entities/Products';
 import { Category } from "../Entities/Category";
 import { Subcategory } from "../Entities/Subcategory";
 import { uploadImage } from '../Config/Cloudinary';
 import { ProductImage } from "../Entities/ProductImage";
 import {Brackets} from "typeorm";
+import {ProductImageDto} from "../DTO/ProductImageDTO";
 
 export class ProductService {
     private productRepository = AppDataSource.getRepository(Products);

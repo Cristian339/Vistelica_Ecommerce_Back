@@ -25,7 +25,7 @@ export class PaymentService {
             throw new Error('Error al obtener el pago');
         }
     }
-
+    /*
     // Crear un nuevo pago
     async createPayment(data: {
         order_id: number;
@@ -65,7 +65,7 @@ export class PaymentService {
     }
 
     // Actualizar el estado de un pago
-    async updatePaymentStatus(id: number, newStatus: string): Promise<Payment> {
+    /*async updatePaymentStatus(id: number, newStatus: string): Promise<Payment> {
         try {
             const payment = await this.paymentRepository.findOneBy({ payment_id: id });
             if (!payment) {
@@ -89,7 +89,7 @@ export class PaymentService {
             console.error('Error al actualizar pago:', error);
             throw new Error('Error al actualizar el pago');
         }
-    }
+    }*/
 
 
 
