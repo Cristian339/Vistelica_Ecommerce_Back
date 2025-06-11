@@ -1,5 +1,5 @@
 import { DataSource, Repository } from "typeorm";
-import { Order } from "../entities/Order";
+import { Order } from "../Entities/Order";
 
 export class OrderRepository {
     private repo: Repository<Order>;

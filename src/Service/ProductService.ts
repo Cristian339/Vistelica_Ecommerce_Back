@@ -1,5 +1,5 @@
 import { AppDataSource } from '../Config/database';
-import { ProductImageDto } from '../Dto/ProductImageDto';
+import { ProductImageDto } from '../DTO/ProductImageDto';
 import { Color, Products, Size } from '../Entities/Products';
 import { Category } from "../Entities/Category";
 import { Subcategory } from "../Entities/Subcategory";
