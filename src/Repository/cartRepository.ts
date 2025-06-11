@@ -3,10 +3,6 @@ import { Order } from "../Entities/Order";
 
 export class CartRepository extends Repository<Order> {
     // Crear un nuevo pedido (carrito)
-    async createOrder(userId: number): Promise<Order> {
-        const order = this.create({ user: { user_id: userId }, status: "en proceso" });
-        return await this.save(order);
-    }
 
     // Obtener un pedido por su ID
     async getOrderById(orderId: number): Promise<Order | null> {
