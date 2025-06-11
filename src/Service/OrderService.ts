@@ -1,8 +1,8 @@
 import { DataSource } from "typeorm";
-import { Order, OrderStatus } from "../entities/Order";
-import {OrderDetail, RefundStatus} from "../entities/OrderDetail";
-import { AdditionalAddress } from "../entities/Address";
-import { User } from "../entities/User";
+import { Order, OrderStatus } from "../Entities/Order";
+import {OrderDetail, RefundStatus} from "../Entities/OrderDetail";
+import { AdditionalAddress } from "../Entities/Address";
+import { User } from "../Entities/User";
 
 interface CreateOrderDTO {
     user_id: number;

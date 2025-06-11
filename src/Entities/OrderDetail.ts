@@ -49,7 +49,7 @@ export class OrderDetail {
     })
     estado_devolucion!: RefundStatus;
 
-    // Nuevo campo para la foto de devolución
+
     @Column({ type: "text", nullable: true })
     foto_devolucion_url!: string | null;
 }
