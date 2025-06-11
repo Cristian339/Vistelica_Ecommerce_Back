@@ -21,6 +21,22 @@ router.post('/payment-methods',
     }
 );
 
+
+
+// Obtener método de pago por defecto (con número de tarjeta)
+router.get('/payment-methods/default',
+    (req: Request, res: Response, next: NextFunction) => {
+        auth.authenticate(req, res, next);
+    },
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            await paymentMethodController.getDefaultPaymentMethod(req, res);
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
 // Obtener métodos de pago del usuario
 router.get('/payment-methods',
     (req: Request, res: Response, next: NextFunction) => {
@@ -50,6 +66,9 @@ router.put('/payment-methods/:methodId/default',
         }
     }
 );
+
+
+
 
 // Eliminar método de pago
 router.delete('/payment-methods/:methodId',

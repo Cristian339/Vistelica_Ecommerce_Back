@@ -26,7 +26,7 @@ export class PaymentMethodService {
             }
 
             // Validar datos mínimos requeridos
-            if (!data.type || !data.provider || !data.card_last_four) {
+            if (!data.type || !data.provider) {
                 return {
                     success: false,
                     message: 'Datos incompletos. Se requieren tipo, proveedor y últimos 4 dígitos.'
@@ -41,7 +41,7 @@ export class PaymentMethodService {
                 user: user,
                 type: data.type,
                 provider: data.provider,
-                card_last_four: data.card_last_four,
+                card_number: data.card_number,
                 card_holder_name: data.card_holder_name,
                 expiry_month: data.expiry_month,
                 expiry_year: data.expiry_year,
@@ -211,7 +211,7 @@ export class PaymentMethodService {
             // Actualizar campos permitidos
             if (data.type !== undefined) paymentMethod.type = data.type;
             if (data.provider !== undefined) paymentMethod.provider = data.provider;
-            if (data.card_last_four !== undefined) paymentMethod.card_last_four = data.card_last_four;
+            if (data.card_number !== undefined) paymentMethod.card_number = data.card_number;
             if (data.card_holder_name !== undefined) paymentMethod.card_holder_name = data.card_holder_name;
             if (data.expiry_month !== undefined) paymentMethod.expiry_month = data.expiry_month;
             if (data.expiry_year !== undefined) paymentMethod.expiry_year = data.expiry_year;
@@ -239,6 +239,40 @@ export class PaymentMethodService {
                 success: false,
                 message: `Error al actualizar método de pago: ${error.message}`
             };
+        }
+    }
+
+
+    /**
+     * Obtiene el método de pago por defecto de un usuario INCLUYENDO el número completo de tarjeta
+     * @param userId ID del usuario
+     * @returns Método de pago por defecto con el número de tarjeta o null si no existe
+     */
+    async getDefaultPaymentMethodWithCardNumber(userId: number): Promise<PaymentMethod | null> {
+        try {
+            const method = await this.paymentMethodRepository.findOne({
+                where: {
+                    user: { user_id: userId },
+                    is_default: true
+                },
+                // Seleccionamos todos los campos incluyendo card_number
+                select: [
+                    'payment_method_id',
+                    'type',
+                    'provider',
+                    'card_number', // <- Número completo
+                    'card_holder_name',
+                    'expiry_month',
+                    'expiry_year',
+                    'is_default',
+                    'created_at'
+                ]
+            });
+
+            return method;
+        } catch (error) {
+            console.error("Error al obtener método de pago por defecto:", error);
+            return null;
         }
     }
 

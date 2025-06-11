@@ -11,13 +11,13 @@ export class PaymentMethod {
     user!: User;
 
     @Column()
-    type!: string; // 'credit_card', 'debit_card', 'paypal', etc.
+    type!: string;
 
     @Column()
-    provider!: string; // 'visa', 'mastercard', 'paypal', etc.
+    provider!: string;
 
     @Column({ nullable: true })
-    card_last_four?: string;
+    card_number?: string;
 
     @Column({ nullable: true })
     card_holder_name?: string;
@@ -33,6 +33,4 @@ export class PaymentMethod {
 
     @CreateDateColumn()
     created_at!: Date;
-
-
 }
