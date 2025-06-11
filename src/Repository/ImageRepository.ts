@@ -13,11 +13,12 @@ export class ProductImageRepository extends Repository<ProductImage> {
     }
 
     // Método para encontrar la imagen principal de un producto
-    async findMainImageByProductId(productId: number): Promise<ProductImage | undefined> {
+    async findMainImageByProductId(productId: number): Promise<ProductImage | null> {
         return this.findOne({
             where: { product: { product_id: productId }, is_main: true },
         });
     }
+
 
     // Método para agregar una nueva imagen al producto
     async addImagesToProduct(images: ProductImage[]): Promise<ProductImage[]> {

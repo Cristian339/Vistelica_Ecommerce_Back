@@ -8,7 +8,8 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "emitDecoratorMetadata": true,  // Asegúrate de que esté en true
+    "emitDecoratorMetadata": true,
+    "strictPropertyInitialization": false,
     "experimentalDecorators": true
   },
   "include": ["src/**/*.ts"],
