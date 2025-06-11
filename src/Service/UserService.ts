@@ -427,7 +427,7 @@ export class UserService {
             }
         }
 
-        console.log(`Limpieza de registros: ${cleaned} eliminados, ${this.pendingRegistrations.size} restantes`);
+
 
         return {
             cleaned,

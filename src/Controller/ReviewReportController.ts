@@ -43,13 +43,14 @@ export class ReviewReportController {
         try {
             const reportRepo = AppDataSource.getRepository(ReviewReport);
 
-            // Obtener todas las reseñas que tienen reportes
+            // Obtener todas las reseñas que tienen reportes incluyendo producto e imagen principal
             const reports = await reportRepo
                 .createQueryBuilder("report")
                 .leftJoinAndSelect("report.review", "review")
                 .leftJoinAndSelect("report.user", "user")
                 .leftJoinAndSelect("review.user", "reviewUser")
                 .leftJoinAndSelect("review.product", "product")
+                .leftJoinAndSelect("product.images", "image", "image.is_main = true")
                 .orderBy("report.reported_at", "DESC")
                 .getMany();
 
@@ -59,7 +60,14 @@ export class ReviewReportController {
 
                 if (!acc[reviewId]) {
                     acc[reviewId] = {
-                        review: report.review,
+                        review: {
+                            ...report.review,
+                            product: {
+                                ...report.review.product,
+                                // Obtener solo la imagen principal
+                                mainImage: report.review.product.images?.find(img => img.is_main)?.image_url || null
+                            }
+                        },
                         totalReports: 0,
                         reports: []
                     };
@@ -73,7 +81,7 @@ export class ReviewReportController {
                     reported_at: report.reported_at,
                     reporter: {
                         user_id: report.user.user_id,
-                        username: report.user.user_id,
+                        email: report.user.email,
                     }
                 });
 
