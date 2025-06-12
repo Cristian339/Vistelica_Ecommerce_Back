@@ -29,17 +29,17 @@ export class OrderDetail {
     price!: number;
 
     @Column({ type: "enum", enum: Size, nullable: true })
-    size!: Size;
+    size!: Size | null;
 
     @Column({ type: "enum", enum: Color, nullable: true })
-    color!: Color;
+    color!: Color | null;
 
     @Column({ type: "int", default: 1 })
     quantity!: number;
 
     // Campos de devolución
     @Column({ type: "text", nullable: true })
-    motivo_devolucion!: string | undefined;
+    motivo_devolucion?: string | null;
 
     @Column({
         type: "enum",
@@ -51,5 +51,5 @@ export class OrderDetail {
 
 
     @Column({ type: "text", nullable: true })
-    foto_devolucion_url!: string | null;
+    foto_devolucion_url?: string | null;
 }
