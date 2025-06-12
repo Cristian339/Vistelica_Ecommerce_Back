@@ -32,10 +32,10 @@ export class Order {
     address!: AdditionalAddress;
 
     @Column({ nullable: true })
-    payment_method_id!: number;
+    payment_method_id?: number | null;
 
     @Column({ nullable: true })
-    payment_method_name!: string;
+    payment_method_name?: string | null;
 
     @Column({ type: "enum", enum: OrderStatus, default: OrderStatus.ALMACEN })
     status!: OrderStatus;

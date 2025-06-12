@@ -3,7 +3,7 @@ import { Order, OrderStatus } from "../Entities/Order";
 import { OrderDetail, RefundStatus } from "../Entities/OrderDetail";
 import { AdditionalAddress } from "../Entities/Address";
 import { User } from "../Entities/User";
-import { Size, Color } from "../Entities/Products";
+import { Products, Size, Color } from "../Entities/Products";
 
 interface CreateOrderDTO {
     user_id: number;
@@ -30,9 +30,9 @@ export class OrderService {
         const userRepo = this.dataSource.getRepository(User);
         const addressRepo = this.dataSource.getRepository(AdditionalAddress);
         const orderRepo = this.dataSource.getRepository(Order);
-        const productRepo = this.dataSource.getRepository("Products"); // Asegúrate de que el repositorio esté bien registrado
+        const productRepo = this.dataSource.getRepository(Products);
 
-        const user = await userRepo.findOneBy({ user_id: dto.user_id }); // ajusta a tu campo real si es solo `id`
+        const user = await userRepo.findOneBy({ user_id: dto.user_id });
         if (!user) throw new Error("User not found");
 
         const address = await addressRepo.findOneBy({ id: dto.address_id });
@@ -41,8 +41,8 @@ export class OrderService {
         const order = new Order();
         order.user = user;
         order.address = address;
-        order.payment_method_id = dto.payment_method_id || null;
-        order.payment_method_name = dto.payment_method_name || null;
+        order.payment_method_id = dto.payment_method_id ?? null;
+        order.payment_method_name = dto.payment_method_name ?? null;
         order.status = OrderStatus.ALMACEN;
 
         const details: OrderDetail[] = [];
@@ -77,13 +77,9 @@ export class OrderService {
     async solicitarDevolucion(orderDetailId: number, motivo: string): Promise<OrderDetail> {
         const orderDetailRepo = this.dataSource.getRepository(OrderDetail);
 
-        const detail = await orderDetailRepo.findOne({
-            where: { order_detail_id: orderDetailId }
-        });
+        const detail = await orderDetailRepo.findOneBy({ order_detail_id: orderDetailId });
 
-        if (!detail) {
-            throw new Error("Order detail not found");
-        }
+        if (!detail) throw new Error("Order detail not found");
 
         if (detail.estado_devolucion !== RefundStatus.NADA) {
             throw new Error("Solo se puede solicitar devolución para items con estado 'Nada'");
@@ -114,9 +110,9 @@ export class OrderService {
     }
 
     async getRefundsInReview(): Promise<OrderDetail[]> {
-        const orderDetailRepository = this.dataSource.getRepository(OrderDetail);
+        const orderDetailRepo = this.dataSource.getRepository(OrderDetail);
 
-        return await orderDetailRepository.find({
+        return await orderDetailRepo.find({
             where: {
                 estado_devolucion: RefundStatus.REVISION
             },
@@ -139,23 +135,17 @@ export class OrderService {
         newStatus: RefundStatus.ACEPTADO | RefundStatus.RECHAZADO,
         rejectionReason?: string
     ): Promise<OrderDetail> {
-        const orderDetailRepository = this.dataSource.getRepository(OrderDetail);
+        const orderDetailRepo = this.dataSource.getRepository(OrderDetail);
 
-        const detail = await orderDetailRepository.findOne({
+        const detail = await orderDetailRepo.findOne({
             where: { order_detail_id: orderDetailId },
             relations: ['order']
         });
 
-        if (!detail) {
-            throw new Error("Order detail not found");
-        }
+        if (!detail) throw new Error("Order detail not found");
 
         if (detail.estado_devolucion !== RefundStatus.REVISION) {
             throw new Error("Solo se puede actualizar el estado de devoluciones en 'Revision'");
-        }
-
-        if (newStatus !== RefundStatus.ACEPTADO && newStatus !== RefundStatus.RECHAZADO) {
-            throw new Error("El nuevo estado debe ser 'Aceptado' o 'Rechazado'");
         }
 
         if (newStatus === RefundStatus.RECHAZADO && !rejectionReason) {
@@ -163,11 +153,10 @@ export class OrderService {
         }
 
         detail.estado_devolucion = newStatus;
-
         if (newStatus === RefundStatus.RECHAZADO) {
             detail.motivo_devolucion = rejectionReason;
         }
 
-        return await orderDetailRepository.save(detail);
+        return await orderDetailRepo.save(detail);
     }
 }
