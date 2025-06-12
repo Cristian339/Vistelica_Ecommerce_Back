@@ -31,10 +31,10 @@ export class Order {
     @JoinColumn({ name: 'address_id' })
     address!: AdditionalAddress;
 
-    @Column({ nullable: true })
+    @Column({ type: 'int', nullable: true })
     payment_method_id?: number | null;
 
-    @Column({ nullable: true })
+    @Column({ type: 'varchar', nullable: true })
     payment_method_name?: string | null;
 
     @Column({ type: "enum", enum: OrderStatus, default: OrderStatus.ALMACEN })
@@ -55,7 +55,7 @@ export class Order {
     @OneToMany(() => OrderDetail, detail => detail.order, { cascade: true, eager: true })
     details!: OrderDetail[];
 
-    @OneToMany(() => Payment, (payment) => payment.order, { cascade: true })
+    @OneToMany(() => Payment, payment => payment.order, { cascade: true })
     payments!: Payment[];
 
     @CreateDateColumn()
@@ -63,8 +63,6 @@ export class Order {
 
     @UpdateDateColumn()
     updated_at!: Date;
-
-
 
     calculateShippingCost() {
         this.shipping_cost = this.total_price > 50 ? 0 : 5;
