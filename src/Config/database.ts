@@ -41,7 +41,7 @@ export const AppDataSource = new DataSource({
     database: url.pathname.split('/')[1],
     schema: 'vistelica',
     entities: [User, Profile, Products, Category, Subcategory, Review, Order, OrderDetail, Wishlist, Payment, Supplier, ProductImage,AdditionalAddress, Style, StyleImage, PaymentMethod, Cart, CartDetail, ReviewReport],
-    synchronize: true,
+    synchronize: false,
     logging: false,
     ssl: true,
     extra: {
