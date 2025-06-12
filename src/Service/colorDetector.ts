@@ -4,7 +4,7 @@ import sharp from 'sharp';
 // Descargar imagen como Buffer
 async function getImageBuffer(imageUrl: string): Promise<Buffer> {
     const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-    return Buffer.from(response.data, 'binary');
+    return Buffer.from( 'binary');
 }
 
 // Recorta una parte de la imagen
