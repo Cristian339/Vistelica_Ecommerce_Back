@@ -43,12 +43,12 @@ export class AdditionalAddress {
     @Column({ nullable: true, type: 'text' })
     description: string; // Nuevo campo descripción
 
-    @ManyToOne(() => User, user => user.additional_addresses)
+    @ManyToOne(() => User, user => user.additional_addresses, { nullable: true })
     @JoinColumn({ name: "user_id" })
-    user: User;
+    user: User | null;
 
-    @Column()
-    user_id: number;
+    @Column({ nullable: true })
+    user_id: number | null;
 
     @CreateDateColumn()
     created_at: Date;

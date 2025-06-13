@@ -1,12 +1,15 @@
 import { Repository } from 'typeorm';
 import { AdditionalAddress } from '../Entities/Address';
 import { AppDataSource } from '../Config/database';
+import {Order} from "../Entities/Order";
 
 export class AddressService {
     private addressRepository: Repository<AdditionalAddress>;
+    private orderRepository: Repository<Order>;
 
     constructor() {
         this.addressRepository = AppDataSource.getRepository(AdditionalAddress);
+        this.orderRepository = AppDataSource.getRepository(Order);
     }
 
     // Obtener todas las direcciones adicionales del usuario
@@ -113,9 +116,47 @@ export class AddressService {
     }
 
     // Eliminar dirección
-    async deleteAddress(id: number, userId: number): Promise<boolean> {
-        const result = await this.addressRepository.delete({ id, user_id: userId });
-        return result.affected ? result.affected > 0 : false;
+    async deleteAddress(id: number, userId: number): Promise<{success: boolean; message?: string}> {
+        // Verificar si la dirección existe y pertenece al usuario
+        const address = await this.addressRepository.findOne({
+            where: { id, user_id: userId }
+        });
+
+        if (!address) {
+            return {
+                success: false,
+                message: 'Dirección no encontrada o no pertenece al usuario'
+            };
+        }
+
+        // Verificar si la dirección está siendo usada en algún pedido
+        const ordersWithThisAddress = await this.orderRepository.find({
+            where: { address: { id } },
+            take: 1 // Solo necesitamos saber si hay al menos uno
+        });
+
+        if (ordersWithThisAddress.length > 0) {
+            // Si está en uso, marcamos user_id como null en lugar de eliminar
+            await this.addressRepository.update(
+                { id },
+                {
+                    user_id: null,
+                    is_default: false // No puede ser default si no tiene usuario
+                }
+            );
+
+            return {
+                success: true,
+                message: 'Dirección desvinculada pero conservada por estar en pedidos existentes'
+            };
+        } else {
+            // Si no está en uso, eliminamos normalmente
+            const result = await this.addressRepository.delete({ id });
+            return {
+                success: result.affected ? result.affected > 0 : false,
+                message: result.affected ? 'Dirección eliminada' : 'No se pudo eliminar la dirección'
+            };
+        }
     }
 
     // Marcar una dirección como predeterminada

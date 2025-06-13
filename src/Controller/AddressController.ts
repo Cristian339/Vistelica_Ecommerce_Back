@@ -188,12 +188,6 @@ export class AddressController {
 
             const defaultAddress = await this.addressService.getDefaultAddress(req.user.id);
 
-            if (!defaultAddress) {
-                return res.status(404).json({
-                    success: false,
-                    message: "No se encontró dirección predeterminada"
-                });
-            }
 
             return res.status(200).json({
                 success: true,
