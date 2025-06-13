@@ -35,23 +35,63 @@ export class OrderController {
 
             const {
                 address_id,
+                address_data,
                 payment_method_id,
                 payment_method_name,
                 details
             } = req.body;
 
-            if (!address_id || !details || !Array.isArray(details) || details.length === 0) {
+            if (!details || !Array.isArray(details) || details.length === 0) {
                 return res.status(400).json({ message: "Datos incompletos para crear el pedido." });
             }
 
-            const address = await this.addressRepository.findOne({
-                where: { id: address_id, user_id: userId }
-            });
-            if (!address) {
-                return res.status(404).json({ message: "Dirección no encontrada o no pertenece al usuario." });
+            let address: AdditionalAddress;
+
+            // Caso 1: Dirección existente
+            if (address_id) {
+                const existingAddress = await this.addressRepository.findOne({
+                    where: { id: address_id, user_id: userId }
+                });
+                if (!existingAddress) {
+                    return res.status(404).json({ message: "Dirección no encontrada o no pertenece al usuario." });
+                }
+                address = existingAddress;
+            }
+            // Caso 2: Nueva dirección
+            else if (address_data) {
+                // Validar datos mínimos
+                if (!address_data.street || !address_data.city || !address_data.postal_code) {
+                    return res.status(400).json({
+                        message: "Datos de dirección incompletos. Se requiere calle, ciudad y código postal."
+                    });
+                }
+
+                // Crear y guardar la nueva dirección ANTES de crear el pedido
+                const newAddress = new AdditionalAddress();
+                newAddress.street = address_data.street;
+                newAddress.numero = address_data.numero || null;
+                newAddress.city = address_data.city;
+                newAddress.state = address_data.state || '';
+                newAddress.postal_code = address_data.postal_code;
+                newAddress.country = address_data.country || 'España';
+                newAddress.block = address_data.block || null;
+                newAddress.floor = address_data.floor || null;
+                newAddress.door = address_data.door || null;
+                newAddress.description = address_data.description || null;
+                newAddress.user_id = userId;
+                newAddress.is_default = false;
+                newAddress.label = address_data.label || 'Dirección temporal';
+
+                // Guardar la nueva dirección en la base de datos
+                address = await this.addressRepository.save(newAddress);
+            }
+            else {
+                return res.status(400).json({
+                    message: "Se requiere address_id (para dirección existente) o address_data (para nueva dirección)."
+                });
             }
 
-            // Validar stock disponible antes de crear el pedido
+            // Validar stock disponible
             for (const item of details) {
                 const product = await this.productRepository.findOne({
                     where: { product_id: item.product_id }
@@ -70,37 +110,36 @@ export class OrderController {
                 }
             }
 
-            // Calcular total_price sin envío
+            // Calcular total y envío
             let total_price = 0;
             for (const item of details) {
                 total_price += Number(item.price) * Number(item.quantity);
             }
 
-            // Añadir coste de envío si total_price <= 50
             const shippingCost = total_price > 50 ? 0 : 5;
             const finalTotal = total_price + shippingCost;
 
-            // Calcular fecha estimada de entrega (3 días después de hoy)
+            // Fecha estimada de entrega
             const estimatedDeliveryDate = new Date();
             estimatedDeliveryDate.setDate(estimatedDeliveryDate.getDate() + 3);
 
             // Crear la orden
             const order = new Order();
             order.user = { user_id: userId } as any;
-            order.address = address;
+            order.address = address; // Usar la dirección guardada
             order.payment_method_id = 0;
             order.payment_method_name = payment_method_name || null;
             order.status = OrderStatus.ALMACEN;
             order.total_price = finalTotal;
+            order.shipping_cost = shippingCost;
             order.estimated_delivery_date = estimatedDeliveryDate;
-
             order.details = [];
 
-            // Crear detalles del pedido y actualizar stock
+            // Crear detalles del pedido
             for (const item of details) {
                 const product = await this.productRepository.findOne({
                     where: { product_id: item.product_id },
-                    relations: ['images'] // Cargar imágenes del producto
+                    relations: ['images']
                 });
 
                 if (!product) {
@@ -109,7 +148,6 @@ export class OrderController {
                     });
                 }
 
-                // Crear detalle del pedido
                 const detail = new OrderDetail();
                 detail.product = product;
                 detail.price = item.price;
@@ -118,18 +156,18 @@ export class OrderController {
                 detail.color = item.color || null;
                 order.details.push(detail);
 
-                // Actualizar stock del producto
+                // Actualizar stock
                 product.stock_quantity -= item.quantity;
                 await this.productRepository.save(product);
             }
 
-            // Generar número de pedido legible
+            // Generar número de pedido
             const now = new Date();
-            const datePart = now.toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
-            const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase(); // 6 caracteres aleatorios
+            const datePart = now.toISOString().slice(0, 10).replace(/-/g, '');
+            const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase();
             order.order_number = `ORD-${datePart}-${randomPart}`;
 
-            // Guardar pedido con detalles
+            // Guardar pedido
             const savedOrder = await this.orderRepository.save(order);
 
             // Crear pago asociado
@@ -141,18 +179,18 @@ export class OrderController {
 
             const savedPayment = await this.paymentRepository.save(payment);
 
-            // Actualizar el payment_method_id del pedido con el id del pago creado
+            // Actualizar el pedido con el ID del pago
             savedOrder.payment_method_id = savedPayment.payment_id;
             await this.orderRepository.save(savedOrder);
 
-            // Obtener el usuario completo con su email y perfil
+            // Obtener usuario para el email
             const user = await this.userRepository.findOne({
                 where: { user_id: userId },
                 relations: ['profile']
             }) as User;
 
-            // Enviar correo de confirmación usando el servicio
-            if (user && user.email) {
+            // Enviar email de confirmación
+            if (user?.email) {
                 await this.emailService.sendOrderConfirmationEmail(user, savedOrder, savedPayment);
             }
 
@@ -162,8 +200,11 @@ export class OrderController {
                 payment: savedPayment
             });
         } catch (error) {
-            console.error(error);
-            return res.status(500).json({ message: "Error interno del servidor" });
+            console.error('Error en createOrder:', error);
+            return res.status(500).json({
+                message: "Error interno del servidor",
+                error: error
+            });
         }
     }
 
