@@ -15,11 +15,11 @@ import { Payment } from "../Entities/Payment";
 import { Supplier } from "../Entities/Supplier";
 import { ProductImage } from "../Entities/ProductImage";
 import { AdditionalAddress } from "../Entities/Address";
-import {Style} from "../Entities/Style";
-import {StyleImage} from "../Entities/StyleImage";
-import {PaymentMethod} from "../Entities/PaymentMethod";
-import {Cart} from "../Entities/Cart";
-import {CartDetail} from "../Entities/CartDetail";
+import { Style } from "../Entities/Style";
+import { StyleImage } from "../Entities/StyleImage";
+import { PaymentMethod } from "../Entities/PaymentMethod";
+import { Cart } from "../Entities/Cart";
+import { CartDetail } from "../Entities/CartDetail";
 import { ReviewReport } from "../Entities/ReviewReport";
 
 // Cargar variables de entorno
@@ -32,6 +32,9 @@ if (!databaseUrl) {
 
 const url = new URL(databaseUrl);
 
+// Detectar si es local
+const isLocal = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+
 export const AppDataSource = new DataSource({
     type: 'postgres',
     host: url.hostname,
@@ -40,13 +43,13 @@ export const AppDataSource = new DataSource({
     password: url.password,
     database: url.pathname.split('/')[1],
     schema: 'vistelica',
-    entities: [User, Profile, Products, Category, Subcategory, Review, Order, OrderDetail, Wishlist, Payment, Supplier, ProductImage,AdditionalAddress, Style, StyleImage, PaymentMethod, Cart, CartDetail, ReviewReport],
+    entities: [
+        User, Profile, Products, Category, Subcategory, Review, Order, OrderDetail,
+        Wishlist, Payment, Supplier, ProductImage, AdditionalAddress, Style, StyleImage,
+        PaymentMethod, Cart, CartDetail, ReviewReport
+    ],
     synchronize: true,
     logging: false,
-    ssl: true,
-    extra: {
-        ssl: {
-            rejectUnauthorized: false, // necesario para Render y conexiones TLS
-        }
-    }
+    ssl: !isLocal ? { rejectUnauthorized: false } : false,
+    extra: !isLocal ? { ssl: { rejectUnauthorized: false } } : {},
 });
