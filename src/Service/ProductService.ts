@@ -1,5 +1,5 @@
 import { AppDataSource } from '../Config/database';
-import { ProductImageDto } from '../Dto/ProductImageDto';
+import { ProductImageDTO } from '../Dto/ProductImageDTO';
 import { Color, Products, Size } from '../Entities/Products';
 import { Category } from "../Entities/Category";
 import { Subcategory } from "../Entities/Subcategory";
@@ -384,21 +384,21 @@ export class ProductService {
         }
     }
 
-    async getMainProductImages(): Promise<ProductImageDto[]> {
+    async getMainProductImages(): Promise<ProductImageDTO[]> {
         try {
             const mainImages = await this.imageRepository.find({
                 where: { is_main: true },
                 relations: ['product']
             });
 
-            return mainImages.map(image => new ProductImageDto(image));
+            return mainImages.map(image => new ProductImageDTO(image));
         } catch (error) {
             console.error('Error al obtener imágenes principales:', error);
             throw new Error('Error al obtener imágenes principales');
         }
     }
 
-    async getMainImageByProductId(productId: number): Promise<ProductImageDto | null> {
+    async getMainImageByProductId(productId: number): Promise<ProductImageDTO | null> {
         try {
             const mainImage = await this.imageRepository.findOne({
                 where: {
@@ -409,7 +409,7 @@ export class ProductService {
             });
 
             if (!mainImage) return null;
-            return new ProductImageDto(mainImage);
+            return new ProductImageDTO(mainImage);
         } catch (error) {
             console.error(`Error al obtener imagen principal:`, error);
             throw new Error('Error al obtener imagen principal');
@@ -419,9 +419,9 @@ export class ProductService {
     /**
      * Obtiene todas las imágenes de un producto por su ID
      * @param productId ID del producto
-     * @returns Array de ProductImageDto con todas las imágenes del producto
+     * @returns Array de ProductImageDTO con todas las imágenes del producto
      */
-    async getAllImagesByProductId(productId: number): Promise<ProductImageDto[]> {
+    async getAllImagesByProductId(productId: number): Promise<ProductImageDTO[]> {
         try {
             const images = await this.imageRepository.find({
                 where: {
@@ -433,7 +433,7 @@ export class ProductService {
                 }
             });
 
-            return images.map(image => new ProductImageDto(image));
+            return images.map(image => new ProductImageDTO(image));
         } catch (error) {
             console.error(`Error al obtener todas las imágenes del producto ${productId}:`, error);
             throw new Error('Error al obtener imágenes del producto');

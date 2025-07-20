@@ -1,6 +1,6 @@
 import { Products } from "../Entities/Products";
 
-export class ProductImageDto {
+export class ProductImageDTO {
     image_id: number;
     image_url: string;
     is_main: boolean;
